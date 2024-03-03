@@ -1,6 +1,4 @@
 import parseTorrent, { toTorrentFile } from "parse-torrent";
-import fs from 'fs';
-import stream from 'stream';
 
 
 
@@ -8,7 +6,7 @@ export default async function handler(req, res) {
   try {
     const url  = await req.query.url;
     const source = await parseTorrent(url);
-    const buffer =  toTorrentFile({ info: source });
+    const buffer =  Buffer.from(toTorrentFile({ info: source }));
 
     res.end(buffer)
   } catch (error) {

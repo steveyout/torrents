@@ -19,13 +19,6 @@ VideoPostTags.propTypes = {
 export default function VideoPostTags({ post }) {
   let { genres,torrents,title} = post;
   const isDesktop = useResponsive('up', 'sm');
-  const file=async (url) => {
-    const source = await parseTorrent(url);
-    const buffer =  await toTorrentFile({info:source});
-    const blob =  new Blob([buffer]);
-
-    return URL.createObjectURL(blob);
-  }
   const { download } = useDownloader();
 
   return (
@@ -45,7 +38,7 @@ export default function VideoPostTags({ post }) {
         {torrents&&
           <Stack direction={isDesktop?'row':'column'} alignItems={'center'} justifyContent={'space-between'}>
           <Button variant={'contained'}  startIcon={<Iconify icon="mynaui:magnet" sx={{ width: 20, height: 20 }} />} sx={{mb:3}}
-                  onClick={async () => download(await file(torrents.en['1080p'].url), `${title}.torrent`)}
+                  onClick={ () => download( `/api/download?url=${torrents.en['1080p'].url}`, `${title}.torrent`)}
           >
             1080p
            <Label variant={'filled'} color={'warning'}>{torrents.en['1080p'].seed} seeders</Label>
