@@ -3,7 +3,7 @@ import axios from "@/utils/axios";
 export const getServerSideProps = async (ctx) => {
   const response= await axios.get(`${process.env.API}/movies/12?sort=trending&order=-1`);
   const {data}=response
-
+  const fields=[]
 
     data.map((movie, index) =>{
     const{_id,title}=movie
