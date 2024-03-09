@@ -46,7 +46,7 @@ export default function VideoPostTags({ post }) {
             <Label variant={'filled'} color={'secondary'}>{torrents.en['1080p'].filesize}</Label>
           </Button>
             <Button variant={'contained'}  startIcon={<Iconify icon="mynaui:magnet" sx={{ width: 20, height: 20 }} />} sx={{mb:3}}
-                    onClick={() => download(file(torrents.en['720p'].url), `${title}.torrent`)}
+                    onClick={ () => download( `/api/download?url=${torrents.en['720p'].url}`, `${title}.torrent`)}
             >
               720p
               <Label variant={'filled'} color={'warning'}>{torrents.en['720p'].seed} seeders</Label>
