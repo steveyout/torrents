@@ -45,6 +45,7 @@
     "apexcharts": "^3.33.2",
     "autosuggest-highlight": "^3.2.1",
     "axios": "^0.26.1",
+    "bencode": "^4.0.0",
     "change-case": "^4.1.2",
     "cloudscraper": "^4.6.0",
     "cookie": "^0.4.2",
