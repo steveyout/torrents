@@ -178,7 +178,7 @@ export function PostContent({ title, views, votes, loved, createdAt, slug, index
   const isDesktop = useResponsive('up', 'md');
   const linkTo = pathname.includes('movies')||torrents?PATH_PAGE.movie(`${paramCase(title)}?imdb_id=${slug}`):
     pathname.includes('tv')||episodes?PATH_PAGE.tv(`${paramCase(title)}?imdb_id=${slug}`):
-      PATH_PAGE.animeWatch(`${paramCase(title)}?imdb_id=${slug}`)
+      PATH_PAGE.tv(`${paramCase(title)}?imdb_id=${slug}`)
   const latestPostLarge = index === 0;
   const latestPostSmall = index === 1 || index === 2 || index === 3;
 
