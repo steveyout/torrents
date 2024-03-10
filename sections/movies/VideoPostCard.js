@@ -10,9 +10,7 @@ import Avatar from '@/components/Avatar';
 import { PATH_PAGE } from '@/routes/paths';
 // hooks
 import useResponsive from '@/hooks/useResponsive';
-import { useRouter } from 'next/router';
 // utils
-import { fDate } from '@/utils/formatTime';
 import { fShortenNumber } from '@/utils/formatNumber';
 // components
 import Image from '@/components/Image';
@@ -20,11 +18,9 @@ import Iconify from '@/components/Iconify';
 import TextMaxLine from '@/components/TextMaxLine';
 import SvgIconStyle from '@/components/SvgIconStyle';
 import TextIconLabel from '@/components/TextIconLabel';
-import stc from 'string-to-color';
-import ModeCommentOutlinedIcon from '@mui/icons-material/ModeCommentOutlined';
 import createAvatar from '@/utils/createAvatar';
-import useAuth from '@/hooks/useAuth';
 import Label from '@/components/Label';
+import { useRouter } from 'next/router'
 
 // ----------------------------------------------------------------------
 
@@ -61,6 +57,7 @@ export default function VideoPostCard({ video, index, status }) {
     torrents,
     trailer,
     genres,
+    episodes,
     images,
     rating} = video;
 
@@ -89,6 +86,8 @@ export default function VideoPostCard({ video, index, status }) {
           hated={rating.hated}
           createdAt={year}
           slug={_id}
+          episodes={episodes}
+          torrents={torrents}
           index={index}
         />
         <OverlayStyle />
@@ -149,6 +148,8 @@ export default function VideoPostCard({ video, index, status }) {
         loved={rating.loved}
         hated={rating.hated}
         createdAt={year}
+        episodes={episodes}
+        torrents={torrents}
         slug={_id}
         index={index}
       />
@@ -166,12 +167,18 @@ PostContent.propTypes = {
   hated:PropTypes.number,
   createdAt:PropTypes.string,
   slug:PropTypes.string,
-  index:PropTypes.number
+  index:PropTypes.number,
+  episodes:PropTypes.object,
+  torrents:PropTypes.object
 };
 
-export function PostContent({ title, views, votes, loved, createdAt, slug, index,hated }) {
+export function PostContent({ title, views, votes, loved, createdAt, slug, index,hated,episodes,torrents }) {
+  const router=useRouter()
+  const{pathname}=router;
   const isDesktop = useResponsive('up', 'md');
-  const linkTo = PATH_PAGE.movie(`${paramCase(title)}?imdb_id=${slug}`);
+  const linkTo = pathname.includes('movies')||torrents?PATH_PAGE.movie(`${paramCase(title)}?imdb_id=${slug}`):
+    pathname.includes('tv')||episodes?PATH_PAGE.tv(`${paramCase(title)}?imdb_id=${slug}`):
+      PATH_PAGE.animeWatch(`${paramCase(title)}?imdb_id=${slug}`)
   const latestPostLarge = index === 0;
   const latestPostSmall = index === 1 || index === 2 || index === 3;
 

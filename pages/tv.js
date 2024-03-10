@@ -25,7 +25,6 @@ import { VideoPostCard, VideoPostsSort, VideoPostsSearch } from '@/sections/movi
 import EmptyContent from '@/components/EmptyContent';
 import InfiniteScroll from 'react-infinite-scroller';
 import { varFade } from '@/components/animate';
-import { MOVIES } from '@consumet/extensions';
 // ----------------------------------------------------------------------
 
 const SORT_OPTIONS = [
@@ -71,7 +70,7 @@ export default function Videos({ data }) {
 
   const [videos, setVideos] = useState(data);
   const [loading, setLoading] = useState(true);
-  const [url, setUrl] = useState(null);
+  const [url, setUrl] = useState(`/api/tv/trending?page=${2}`);
   let [page, setPage] = useState(1);
 
   const [filters, setFilters] = useState('latest');
@@ -108,7 +107,7 @@ export default function Videos({ data }) {
       if (isMountedRef.current) {
         setVideos((prev) => [...prev, ...response.data]);
         setPage(page++);
-        setUrl(`/api/movies/${page}`);
+        setUrl(`/api/tv/trending?page=${page}`);
       }
     } catch (error) {
       console.error(error);
@@ -162,6 +161,7 @@ export default function Videos({ data }) {
             pageStart={0}
             loadMore={handleLoadMore}
             hasMore={url != null}
+            threshold={2500}
             loader={
               <Grid container spacing={3} mt={1}>
                 {[...Array(8)].map((post, index) =>
@@ -212,11 +212,11 @@ export default function Videos({ data }) {
 
 export async function getServerSideProps(context) {
   try {
-    const flixhq = new MOVIES.FlixHQ();
-    const movies = await flixhq.fetchTrendingTvShows();
+    const response= await axios.get(`${process.env.API}/shows/1?sort=trending`);
+    const {data}=response
     return {
       props: {
-        data: movies,
+        data: data,
       }, // will be passed to the page component as props
     };
   } catch (error) {

@@ -2,7 +2,6 @@ import orderBy from 'lodash/orderBy';
 import { m } from 'framer-motion';
 import { useEffect, useCallback, useState } from 'react';
 // next
-import NextLink from 'next/link';
 import { useRouter } from 'next/router';
 // @mui
 import { styled } from '@mui/material/styles';
@@ -11,9 +10,9 @@ import { Grid, Button, Container, Stack, Box, Alert, AlertTitle } from '@mui/mat
 import useSettings from '@/hooks/useSettings';
 import useIsMountedRef from '@/hooks/useIsMountedRef';
 // utils
-import axios from 'axios';
+import axios from '@/utils/axios';
 // routes
-import { PATH_PAGE, PATH_DASHBOARD } from '@/routes/paths';
+import { PATH_PAGE} from '@/routes/paths';
 // layouts
 import Layout from '@/layouts';
 // components
@@ -26,8 +25,8 @@ import { VideoPostCard, VideoPostsSort, VideoPostsSearch } from '@/sections/movi
 import EmptyContent from '@/components/EmptyContent';
 import InfiniteScroll from 'react-infinite-scroller';
 import { varFade } from '@/components/animate';
-import { MOVIES } from '@consumet/extensions';
 import { SearchForm } from "@/sections/forms";
+import { paramCase } from 'change-case';
 // ----------------------------------------------------------------------
 
 const SORT_OPTIONS = [
@@ -74,9 +73,9 @@ export default function Videos({ data }) {
 
   const { id } = query;
 
-  const [videos, setVideos] = useState(data.results);
+  const [videos, setVideos] = useState(data);
   const [loading, setLoading] = useState(videos.length === 0);
-  const [url, setUrl] = useState(data.hasNextPage);
+  const [url, setUrl] = useState(`/api/search/${2}?id=${id}`);
   let [page, setPage] = useState(1);
 
 
@@ -85,14 +84,14 @@ export default function Videos({ data }) {
       setLoading(true)
       if (videos && !videos.length) {
         const response = await axios.get(`/api/search/`, {
-          params: {query: id},
+          params: {id: id},
         });
 
         if (isMountedRef.current) {
-          setVideos(response.data.results);
+          setVideos(response.data);
           setLoading(false);
-          setUrl(response.data.hasNextPage)
           setPage(page++);
+          setUrl(response.data.length===0?null:`/api/search/${page}?id=${id}`);
         }
       } else {
         setLoading(false);
@@ -115,13 +114,13 @@ export default function Videos({ data }) {
         setPage(page++);
       }
       const response = await axios.get(`/api/search/`, {
-        params: {query: id,page:page},
+        params: {id: id,page:page},
       });
 
       if (isMountedRef.current) {
-        setVideos((prev) => [...prev, ...response.data.results]);
+        setVideos((prev) => [...prev, ...response.data]);
         setPage(page++);
-        setUrl(response.data.hasNextPage);
+        setUrl(response.data.length===0?null:`/api/search/${page}?id=${id}`);
       }
     } catch (error) {
       console.error(error);
@@ -136,10 +135,10 @@ export default function Videos({ data }) {
       "position": index,
       "item": {
         "@type": "Movie",
-        "url": movie.id.includes('movie')?PATH_PAGE.movie(movie.id.split('movie/')[1]):PATH_PAGE.tv(movie.id.split('tv/')[1]),
+        "url": movie&&movie.episodes?PATH_PAGE.movie(`${paramCase(movie.title)}?imdb_id=${movie.imdb_id}`):PATH_PAGE.tv(`${paramCase(movie.title)}?imdb_id=${movie.imdb_id}`),
         "name": movie.title,
-        "image": movie.image,
-        "dateCreated": movie.releaseDate,
+        "image": movie.images.poster,
+        "dateCreated": movie.year,
       }
     })
   })
@@ -184,7 +183,7 @@ export default function Videos({ data }) {
           <InfiniteScroll
             pageStart={0}
             loadMore={handleLoadMore}
-            hasMore={url===true}
+            hasMore={url!==null}
             threshold={2500}
             loader={
               <Grid container spacing={3} mt={1}>
@@ -238,15 +237,17 @@ export default function Videos({ data }) {
 export async function getServerSideProps(context) {
   try {
     const id = context.params.id;
-    const flixhq = new MOVIES.FlixHQ();
-    const movies = await flixhq.search(id);
+    const response= await axios.get(`${process.env.API}/movies/1?keywords=${id}`);
+    const response2= await axios.get(`${process.env.API}/shows/1?keywords=${id}`);
+    const response3= await axios.get(`${process.env.API}/animes/1?keywords=${id}`);
+    const data=[...response.data,...response2.data,...response3.data]
     return {
       props: {
-        data: JSON.parse(JSON.stringify(movies)),
+        data: data,
       }, // will be passed to the page component as props
     };
   } catch (error) {
-    console.error('error loading data');
+    console.error('error loading data'+error);
     return {
       props: {
         data: [],

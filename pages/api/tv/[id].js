@@ -1,10 +1,11 @@
 ///axios
-import { MOVIES } from '@consumet/extensions';
-const flixhq = new MOVIES.FlixHQ();
+import axios from "@/utils/axios";
 export default async function handler(req, res) {
   try {
-    const movies = await flixhq.fetchTrendingTvShows();
-    res.status(200).json(movies);
+    const page=await req.query.page||1;
+    const response= await axios.get(`${process.env.API}/shows/${page}?sort=last added`);
+    const {data}=response
+    res.status(200).json(data);
   } catch (error) {
     console.error('failed to load data');
     res.status(500).json({ error: 'failed to load data' });

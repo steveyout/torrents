@@ -1,12 +1,12 @@
 import PropTypes from "prop-types";
 // @mui
 import { Box, Chip, Stack, Typography } from "@mui/material";
-import Button from "@mui/material/Button";
 import Iconify from "@/components/Iconify";
 import Label from "@/components/Label";
 import useResponsive from "@/hooks/useResponsive";
-import parseTorrent, { toTorrentFile } from "parse-torrent";
 import useDownloader from "react-use-downloader";
+import{useState} from 'react'
+import LoadingButton from "@mui/lab/LoadingButton";
 
 // components
 
@@ -17,9 +17,29 @@ VideoPostTags.propTypes = {
 };
 
 export default function VideoPostTags({ post }) {
-  let { genres,torrents,title} = post;
+  let { genres,torrents,title,episodes} = post;
   const isDesktop = useResponsive('up', 'sm');
+  const[loading,setLoading]=useState(false)
   const { download } = useDownloader();
+  if (episodes){
+    torrents={
+      en:{
+        '1080p':JSON.parse(JSON.stringify(episodes[0].torrents[0]).replace('seeds','seed').replace('peers','peer')),
+        '720p':JSON.parse(JSON.stringify(episodes[0].torrents['720p']||episodes[0].torrents['480p']).replace('seeds','seed').replace('peers','peer'))
+      }
+    }
+    torrents.en['720p'].filesize='unknown'
+    torrents.en['1080p'].filesize='uknown'
+  }
+  const downloadTorrent=async (url,title)=>{
+    try{
+      await setLoading(true);
+      await download(url,title)
+      await setLoading(false)
+    }catch (e) {
+      console.log(e)
+    }
+  }
 
   return (
     <>
@@ -36,24 +56,43 @@ export default function VideoPostTags({ post }) {
          Download Torrents
         </Typography>
         {torrents&&
-          <Stack direction={isDesktop?'row':'column'} alignItems={'center'} justifyContent={'space-between'}>
-          <Button variant={'contained'}  startIcon={<Iconify icon="mynaui:magnet" sx={{ width: 20, height: 20 }} />} sx={{mb:3}}
-                  onClick={ () => download( `/api/download?url=${torrents.en['1080p'].url}`, `${title}.torrent`)}
+          <>
+          <Stack direction={isDesktop?'row':'column'} alignItems={'center'} justifyContent={'space-between'} sx={{mb:5}}>
+            <Box sx={{mb:3}}>
+              <Label variant={'filled'} color={'warning'}>{torrents.en['1080p'].seed} seeders</Label>
+              <Label variant={'filled'} color={'error'}>{torrents.en['1080p'].peer} leechers</Label>
+              <Label variant={'filled'} color={'secondary'}>{torrents.en['1080p'].filesize}</Label>
+            </Box>
+          <LoadingButton
+            variant={'contained'}
+            startIcon={<Iconify icon="mynaui:magnet" sx={{ width: 20, height: 20 }} />}
+            onClick={ () => downloadTorrent( `/api/download?url=${torrents.en['1080p'].url}`, `${title}.torrent`)}
+            loading={loading}
+            fullWidth={!isDesktop}
           >
             1080p
-           <Label variant={'filled'} color={'warning'}>{torrents.en['1080p'].seed} seeders</Label>
-            <Label variant={'filled'} color={'error'}>{torrents.en['1080p'].peer} leechers</Label>
-            <Label variant={'filled'} color={'secondary'}>{torrents.en['1080p'].filesize}</Label>
-          </Button>
-            <Button variant={'contained'}  startIcon={<Iconify icon="mynaui:magnet" sx={{ width: 20, height: 20 }} />} sx={{mb:3}}
-                    onClick={ () => download( `/api/download?url=${torrents.en['720p'].url}`, `${title}.torrent`)}
-            >
-              720p
+          </LoadingButton>
+          </Stack>
+
+          <Stack direction={isDesktop?'row':'column'} alignItems={'center'} justifyContent={'space-between'}>
+            <Box sx={{mb:3}}>
               <Label variant={'filled'} color={'warning'}>{torrents.en['720p'].seed} seeders</Label>
               <Label variant={'filled'} color={'error'}>{torrents.en['720p'].peer} leechers</Label>
               <Label variant={'filled'} color={'secondary'}>{torrents.en['720p'].filesize}</Label>
-            </Button>
+            </Box>
+            <LoadingButton
+              variant={'contained'}
+              startIcon={<Iconify
+                icon="mynaui:magnet"
+                sx={{ width: 20, height: 20 }} />}
+              onClick={ () => downloadTorrent( `/api/download?url=${torrents.en['720p'].url}`, `${title}.torrent`)}
+              loading={loading}
+              fullWidth={!isDesktop}
+            >
+              720p
+            </LoadingButton>
           </Stack>
+          </>
         }
       </Box>
     </>

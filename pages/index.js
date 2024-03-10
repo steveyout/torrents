@@ -12,7 +12,7 @@ import useIsMountedRef from '../hooks/useIsMountedRef';
 // utils
 import axios from '@/utils/axios';
 // routes
-import { PATH_PAGE, PATH_DASHBOARD } from '@/routes/paths';
+import { PATH_PAGE } from '@/routes/paths';
 // layouts
 import Layout from '@/layouts';
 // components
@@ -51,7 +51,7 @@ export default function Index({ data }) {
 
   const [movies, setMovies] = useState(data);
   const [loading, setLoading] = useState(true);
-  const [url, setUrl] = useState(null);
+  const [url, setUrl] = useState(`/api/movies/trending?page=${2}`);
   let [page, setPage] = useState(1);
 
 
@@ -85,7 +85,7 @@ export default function Index({ data }) {
       if (isMountedRef.current) {
         setMovies((prev) => [...prev, ...response.data]);
         setPage(page++);
-        setUrl(`/api/movies/${page}`);
+        setUrl(`/api/movies/trending?page=${page}`);
       }
     } catch (error) {
       console.error(error);
@@ -154,6 +154,7 @@ export default function Index({ data }) {
             pageStart={0}
             loadMore={handleLoadMore}
             hasMore={url != null}
+            threshold={2500}
             loader={
               <Grid container spacing={3} mt={1}>
                 {[...Array(8)].map((post, index) =>
@@ -204,7 +205,7 @@ export default function Index({ data }) {
 
 export async function getServerSideProps(context) {
   try {
-    const response= await axios.get(`${process.env.API}/movies/12?sort=trending&order=-1`);
+    const response= await axios.get(`${process.env.API}/movies/1?sort=trending`);
     const {data}=response
     return {
       props: {

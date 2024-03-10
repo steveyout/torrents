@@ -1,15 +1,23 @@
-import { MOVIES } from '@consumet/extensions'
-const flixhq = new MOVIES.FlixHQ();
+import axios from "@/utils/axios";
 
 export default async function handler(req, res) {
   try {
-    const { id } = await req.query;
-    const movie = await flixhq.fetchMediaInfo(`tv/${id}`);
-    const sources =await flixhq.fetchEpisodeSources(`tv/${id}`, movie.episodes[0].id);
-    movie.sources = sources.sources;
-    res.status(200).json(movie);
+    const id  = await req.query.imdb_id;
+    const response= await axios.get(`${process.env.API}/show/${id}`);
+    const {data}=response
+    const result= await axios.get(`${process.env.API}/shows/12?genre=${data.genres[0]}`);
+    data.recommendations=result.data
+    return {
+      props: {
+        data: data,
+      }, // will be passed to the page component as props
+    };
   } catch (error) {
-    console.error('failed to load data');
-    res.status(500).json({ error: 'failed to load data' });
+    console.log(error);
+    return {
+      props: {
+        data: null,
+      }, // will be passed to the page component as props
+    };
   }
 }

@@ -1,11 +1,10 @@
 ///axios
-import { ANIME } from "@consumet/extensions";
-const anime = new ANIME.AnimeSaturn();
+import axios from "@/utils/axios";
 export default async function handler(req, res) {
   try {
-    const { sort } = await req.query;
-    const movies = await anime.search("one");
-    res.status(200).json(movies);
+    const response= await axios.get(`${process.env.API}/animes/15?sort=last added`);
+    const {data}=response
+    res.status(200).json(data);
   } catch (error) {
     console.error('failed to load data');
     res.status(500).json({ error: 'failed to load data' });

@@ -24,7 +24,6 @@ import { SkeletonPost } from '@/components/skeleton';
 import { VideoPostHero, VideoPostTags, VideoPostRecent } from '@/sections/movies';
 import Iconify from '@/components/Iconify';
 import { useSnackbar } from 'notistack';
-import { MOVIES } from '@consumet/extensions'
 
 const RootStyle = styled('div')(({ theme }) => ({
   paddingTop: theme.spacing(8),
@@ -48,7 +47,7 @@ export default function BlogPost({ data }) {
 
   const { query } = useRouter();
 
-  const { id } = query;
+  const { imdb_id,id } = query;
   const [movie, setMovie] = useState(data);
   const [loading, setLoading] = useState(true);
 
@@ -58,7 +57,7 @@ export default function BlogPost({ data }) {
   const getMovie = useCallback(async () => {
     try {
       if (!movie) {
-        const response = await axios.get(`/api/series/${id}`);
+        const response = await axios.get(`/api/series/${imdb_id}`);
 
         if (isMountedRef.current) {
           setMovie(response.data);
@@ -79,23 +78,15 @@ export default function BlogPost({ data }) {
   const structuredData = {
     "@context": "https://schema.org/",
     "@type": "Movie",
-    "name": movie ? sentenceCase(movie.title) : sentenceCase(id),
-    "productionCompany": {
-      "@type": "Organization",
-      "name": movie&&movie.production
-    },
-    "countryOfOrigin": {
-      "@type": "Country",
-      "name": movie&&movie.country
-    }
+    "name": movie ? sentenceCase(movie.title) : sentenceCase(id)
   };
   return (
     <Page
       title={movie ? sentenceCase(movie.title) : sentenceCase(id)}
       meta={
         <>
-          <meta name="description" content={movie?movie.description:id} />
-          <meta name="keywords" content={movie ? `${movie.tags} ${movie.genres} ${movie.casts}`:''} />
+          <meta name="description" content={movie?movie.synopsis:sentenceCase(id)} />
+          <meta name="keywords" content={movie ? `${movie.tags} ${movie.genres}`:''} />
         </>
       }
       structuredData={structuredData}
@@ -134,7 +125,7 @@ export default function BlogPost({ data }) {
                 <Box>
                   <VideoPostTags post={movie} setMovie={setMovie}/>
                 </Box>
-                {movie.description}
+                {movie.synopsis}
               </Box>
             </Card>
           )}
@@ -143,7 +134,7 @@ export default function BlogPost({ data }) {
 
           {error && <Typography variant="h6">404 {error}!</Typography>}
 
-          {!loading && <VideoPostRecent posts={movie.recommended} />}
+          {!loading && <VideoPostRecent posts={movie.recommendations} />}
         </Container>
       </RootStyle>
     </Page>
@@ -152,14 +143,14 @@ export default function BlogPost({ data }) {
 
 export async function getServerSideProps(context) {
   try {
-    const id = context.params.id;
-    const flixhq = new MOVIES.FlixHQ();
-    const movie = await flixhq.fetchMediaInfo(`tv/${id}`);
-    const sources =await flixhq.fetchEpisodeSources(`tv/${id}`, movie.episodes[0].id);
-    movie.sources = sources.sources;
+    const id = context.query.imdb_id;
+    const response= await axios.get(`${process.env.API}/show/${id}`);
+    const {data}=response
+    const result= await axios.get(`${process.env.API}/shows/12?genre=${data.genres[0]}`);
+    data.recommendations=result.data
     return {
       props: {
-        data: movie,
+        data: data,
       }, // will be passed to the page component as props
     };
   } catch (error) {

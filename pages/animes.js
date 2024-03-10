@@ -1,8 +1,6 @@
 import orderBy from 'lodash/orderBy';
 import { m } from 'framer-motion';
 import { useEffect, useCallback, useState } from 'react';
-// next
-import NextLink from 'next/link';
 // @mui
 import { styled } from '@mui/material/styles';
 import { Grid, Button, Container, Stack, Box, Alert, AlertTitle } from '@mui/material';
@@ -12,12 +10,11 @@ import useIsMountedRef from '@/hooks/useIsMountedRef';
 // utils
 import axios from 'axios';
 // routes
-import { PATH_PAGE, PATH_DASHBOARD } from '@/routes/paths';
+import { PATH_PAGE} from '@/routes/paths';
 // layouts
 import Layout from '@/layouts';
 // components
 import Page from '@/components/Page';
-import Iconify from '@/components/Iconify';
 import { SkeletonPostItem } from '@/components/skeleton';
 import HeaderBreadcrumbs from '@/components/HeaderBreadcrumbs';
 // sections
@@ -25,8 +22,6 @@ import { VideoPostCard, VideoPostsSort, VideoPostsSearch } from '@/sections/movi
 import EmptyContent from '@/components/EmptyContent';
 import InfiniteScroll from 'react-infinite-scroller';
 import { varFade } from '@/components/animate';
-import { ANIME } from "@consumet/extensions";
-import { useSnackbar } from 'notistack';
 // ----------------------------------------------------------------------
 
 const SORT_OPTIONS = [
@@ -74,7 +69,6 @@ export default function Videos({ data }) {
   const [loading, setLoading] = useState(true);
   const [url, setUrl] = useState(null);
   let [page, setPage] = useState(1);
-  const { enqueueSnackbar } = useSnackbar();
 
   const [filters, setFilters] = useState('latest');
 
@@ -83,19 +77,17 @@ export default function Videos({ data }) {
   const getAllPosts = useCallback(async () => {
     try {
       if (videos && !videos.length) {
-        const response = await axios.get(`/api/animes/recent`);
+        const response = await axios.get(`/api/animes/trending`);
 
         if (isMountedRef.current) {
-          setVideos(response.data.results);
-          setPage(page++);
+          setVideos(response.data);
           setLoading(false);
         }
       } else {
-        setPage(page++);
         setLoading(false);
       }
     } catch (error) {
-      enqueueSnackbar('Oops! Something went wrong,Please try again later', { variant: 'error' });
+      console.error(error);
     }
   }, [isMountedRef]);
 
@@ -123,34 +115,14 @@ export default function Videos({ data }) {
       setFilters(value);
     }
   };
-  ////////////structured data
-  const list=[]
-  videos&&videos.map((movie,index)=>{
-    list.push({
-      "@type": "ListItem",
-      "position": index,
-      "item": {
-        "@type": "Movie",
-        "url": movie.id.includes('movie')?PATH_PAGE.movie(movie.id.split('movie/')[1]):PATH_PAGE.tv(movie.id.split('tv/')[1]),
-        "name": movie.title,
-        "image": movie.image,
-        "dateCreated": movie.releaseDate,
-      }
-    })
-  })
-  const structuredData = {
-    "@context": "https://schema.org",
-    "@type": "ItemList",
-    "itemListElement": list
-  };
 
   return (
-    <Page title="Youplex movies" structuredData={structuredData}>
+    <Page title="Youplex movies">
       <RootStyle>
         <Container maxWidth={themeStretch ? false : 'lg'}>
           <HeaderBreadcrumbs
-            heading="Anime"
-            links={[{ name: 'Home', href: '/' }, { name: 'Anime',href: PATH_PAGE.movies },{ name: 'Recent' }]}
+            heading="Series"
+            links={[{ name: 'Home', href: '/' }, { name: 'Series',href: PATH_PAGE.series },{ name: 'Trending' }]}
           />
 
           <Stack mb={5} direction="row" alignItems="center" justifyContent="space-between">
@@ -236,15 +208,16 @@ export default function Videos({ data }) {
 
 export async function getServerSideProps(context) {
   try {
-    const anime = new ANIME.AnimeSaturn();
-    const movies = await anime.search("one");
+    const response= await axios.get(`${process.env.API}/animes/12?sort=trending&order=-1`);
+    const {data}=response
+    console.log(data)
     return {
       props: {
-        data: movies.results,
+        data: data,
       }, // will be passed to the page component as props
     };
   } catch (error) {
-    console.error('error loading data'+error);
+    console.error('error loading data');
     return {
       props: {
         data: [],

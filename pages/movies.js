@@ -186,6 +186,7 @@ export default function Videos({ data }) {
             pageStart={0}
             loadMore={handleLoadMore}
             hasMore={url != null}
+            threshold={2500}
             loader={
               <Grid container spacing={3} mt={1}>
                 {[...Array(8)].map((post, index) =>
