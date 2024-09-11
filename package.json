@@ -77,7 +77,7 @@
     "media-icons": "^0.4.2",
     "moment": "^2.29.4",
     "moment-duration-format": "^2.3.2",
-    "next": "latest",
+    "next": "^12.3.4",
     "next-sitemap": "^3.1.47",
     "notistack": "^2.0.3",
     "nprogress": "^0.2.0",
