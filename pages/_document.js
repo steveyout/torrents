@@ -110,6 +110,14 @@ export default class MyDocument extends Document {
             gtag('config', 'G-PQEDR9JBYK');
             `}
           </Script>
+          <Script async strategy="afterInteractive" src="//acscdn.com/script/aclib.js"></Script>
+          <Script data-cfasync="false" strategy="lazyOnload">
+            {`
+           aclib.runPop({
+        zoneId: '9033646',
+    });
+             `}
+          </Script>
           {/*
           <Script
             data-cfasync="false"
