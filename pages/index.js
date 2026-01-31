@@ -176,6 +176,21 @@ export default function Index({ data }) {
                Stream Movies (NEW)
               </Button>
             </NextLink>
+                 
+            <NextLink href={'https://html5games.site/'} passHref>
+              <Button
+                variant="contained"
+                color={'error'}
+                startIcon={<Iconify icon={'codicon:tools'} />}
+                sx={{
+                  animation: `${pulse} ${1500}ms ease-out infinite`,
+                  mb: 5,
+                }}
+              >
+                Play html5games games with friends
+              </Button>
+            </NextLink>
+                  
           <div id="container-080f7d0cf04b69d4b89c431b9fb38636"></div>
           </Stack>
 
