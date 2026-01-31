@@ -118,6 +118,11 @@ export default class MyDocument extends Document {
     });
              `}
           </Script>
+<Script
+            data-cfasync="false"
+            strategy="afterInteractive"
+            src="https://disturbsparkler.com/080f7d0cf04b69d4b89c431b9fb38636/invoke.js"
+          ></Script>
           {/*
           <Script
             data-cfasync="false"
