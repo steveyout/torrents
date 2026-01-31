@@ -4,7 +4,7 @@ import { useEffect, useCallback, useState } from 'react';
 // next
 import NextLink from 'next/link';
 // @mui
-import { styled } from '@mui/material/styles';
+import { styled,keyframes } from '@mui/material/styles';
 import { Grid, Button, Container, Stack, Box, Alert, AlertTitle } from '@mui/material';
 // hooks
 import useSettings from '../hooks/useSettings';
@@ -46,6 +46,17 @@ Index.getLayout = function getLayout(page) {
 
 export default function Index({ data }) {
   const { themeStretch } = useSettings();
+  const pulse = keyframes`
+    0% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.1);
+    }
+    100% {
+      transform: scale(1);
+    }
+  `;
 
   const isMountedRef = useIsMountedRef();
 
@@ -149,6 +160,22 @@ export default function Index({ data }) {
               </Alert>
             </m.div>
 
+          </Stack>
+
+            <Stack alignItems={'center'} justifyContent={'center'} mb={5}>
+            <NextLink href={'https://youplex.site/'} passHref>
+              <Button
+                variant="contained"
+                color={'warning'}
+                startIcon={<Iconify icon={'icon-park-outline:play'} />}
+                sx={{
+                  animation: `${pulse} ${1500}ms ease-out infinite`,
+                  mb: 5,
+                }}
+              >
+               Stream Movies (NEW)
+              </Button>
+            </NextLink>
           <div id="container-080f7d0cf04b69d4b89c431b9fb38636"></div>
           </Stack>
 
