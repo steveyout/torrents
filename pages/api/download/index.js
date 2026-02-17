@@ -1,30 +1,4 @@
 import parseTorrent, { remote, toTorrentFile } from 'parse-torrent';
-
-export default async function handler(req, res) {
-  try {
-    const { url } = req.query;
-
-    if (!url) {
-      return res.status(400).json({ error: 'URL query parameter is required' });
-    }
-
-    // Use the named 'remote' function from the docs to fetch metadata
-    const torrentData = await new Promise((resolve, reject) => {
-      remote(url, { timeout: 30 * 1000 }, (err, parsed) => {
-        if (err) {
-          // Fallback: If remote fails (e.g. it was just a magnet string, not a URL)
-          // try parsing the string directly using the default export
-          try {
-            const result = parseTorrent(url);
-            if (result.infoHash) return resolve(result);
-            reject(err);
-          } catch (e) {
-            reject(new Error("Invalid torrent source or timeout fetching remote file."));
-          }
-        } else {
-          resolve(parsed);
-        }
-      });import parseTorrent, { remote, toTorrentFile } from 'parse-torrent';
 import WebTorrent from 'webtorrent';
 
 export default async function handler(req, res) {
