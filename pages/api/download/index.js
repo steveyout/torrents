@@ -24,28 +24,70 @@ export default async function handler(req, res) {
         } else {
           resolve(parsed);
         }
-      });
-    });
+      });import parseTorrent, { remote, toTorrentFile } from 'parse-torrent';
+import WebTorrent from 'webtorrent';
 
-    // Ensure we have 'info' property needed for toTorrentFile
-    // Note: magnet links don't contain full 'info' (pieces/length) 
-    // unless they are fetched via 'remote' from a .torrent file.
-    if (!torrentData.info) {
-      throw new Error("Cannot generate a .torrent file from a magnet link without metadata. Please provide a direct .torrent URL.");
+export default async function handler(req, res) {
+  // Increase timeout because fetching metadata from peers can take a few seconds
+  const timeoutMs = 30000; 
+
+  try {
+    const { url } = req.query;
+
+    if (!url) {
+      return res.status(400).json({ error: 'URL query parameter is required' });
     }
 
-    // Convert the parsed object back into a .torrent file Buffer
-    const torrentBuffer = toTorrentFile(torrentData);
+    let torrentMetadata;
 
-    // Sanitize filename
-    const name = torrentData.name || 'download';
-    const safeName = name.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+    if (url.startsWith('magnet:')) {
+      // --- CASE 1: MAGNET LINK ---
+      // We must use a WebTorrent client to fetch metadata from peers
+      const client = new WebTorrent();
+      
+      torrentMetadata = await new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          client.destroy();
+          reject(new Error("Metadata fetch timeout (no seeds found for this magnet)"));
+        }, timeoutMs);
 
-    // Set headers for file download
+        client.add(url, (torrent) => {
+          // 'metadata' event fires when the info dict is received from peers
+          torrent.on('metadata', () => {
+            clearTimeout(timeout);
+            const parsed = parseTorrent(torrent.torrentFile);
+            client.destroy();
+            resolve(parsed);
+          });
+        });
+
+        client.on('error', (err) => {
+          clearTimeout(timeout);
+          client.destroy();
+          reject(err);
+        });
+      });
+
+    } else {
+      // --- CASE 2: DIRECT HTTP/HTTPS URL ---
+      torrentMetadata = await new Promise((resolve, reject) => {
+        remote(url, { timeout: timeoutMs }, (err, parsed) => {
+          if (err) reject(err);
+          else resolve(parsed);
+        });
+      });
+    }
+
+    // Convert the resolved metadata into the .torrent file buffer
+    const torrentBuffer = toTorrentFile(torrentMetadata);
+
+    const fileName = (torrentMetadata.name || 'download')
+      .replace(/[^a-z0-9]/gi, '_')
+      .toLowerCase();
+
     res.setHeader('Content-Type', 'application/x-bittorrent');
-    res.setHeader('Content-Disposition', `attachment; filename="${safeName}.torrent"`);
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}.torrent"`);
 
-    // Send the buffer
     return res.status(200).send(torrentBuffer);
 
   } catch (error) {
