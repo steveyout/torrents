@@ -1,4 +1,4 @@
-import parseTorrent from 'parse-torrent'
+import parseTorrent, { remote, toTorrentFile } from 'parse-torrent';
 
 export default async function handler(req, res) {
   try {
@@ -8,18 +8,18 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'URL query parameter is required' });
     }
 
-    // Modern parse-torrent usage: Use parseTorrent.remote directly 
-    // or fetch the buffer manually if it's a direct .torrent URL.
+    // Use the named 'remote' function from the docs to fetch metadata
     const torrentData = await new Promise((resolve, reject) => {
-      parseTorrent.remote(url, (err, parsed) => {
+      remote(url, { timeout: 30 * 1000 }, (err, parsed) => {
         if (err) {
-          // If remote fails, it might be because the URL is a direct link
-          // we try to parse the URL string itself (for magnets)
+          // Fallback: If remote fails (e.g. it was just a magnet string, not a URL)
+          // try parsing the string directly using the default export
           try {
-            const simpleParse = parseTorrent(url);
-            resolve(simpleParse);
-          } catch (e) {
+            const result = parseTorrent(url);
+            if (result.infoHash) return resolve(result);
             reject(err);
+          } catch (e) {
+            reject(new Error("Invalid torrent source or timeout fetching remote file."));
           }
         } else {
           resolve(parsed);
@@ -27,28 +27,31 @@ export default async function handler(req, res) {
       });
     });
 
-    // Check if we have enough data to build a file
-    if (!torrentData || !torrentData.infoHash) {
-      throw new Error("Invalid torrent metadata received.");
+    // Ensure we have 'info' property needed for toTorrentFile
+    // Note: magnet links don't contain full 'info' (pieces/length) 
+    // unless they are fetched via 'remote' from a .torrent file.
+    if (!torrentData.info) {
+      throw new Error("Cannot generate a .torrent file from a magnet link without metadata. Please provide a direct .torrent URL.");
     }
 
-    // Convert parsed metadata to a .torrent file buffer
-    const torrentBuffer = parseTorrent.toTorrentFile(torrentData);
+    // Convert the parsed object back into a .torrent file Buffer
+    const torrentBuffer = toTorrentFile(torrentData);
 
-    // Clean up the filename (remove special characters)
-    const rawName = torrentData.name || 'download';
-    const safeName = rawName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+    // Sanitize filename
+    const name = torrentData.name || 'download';
+    const safeName = name.replace(/[^a-z0-9]/gi, '_').toLowerCase();
 
-    // Set Headers
+    // Set headers for file download
     res.setHeader('Content-Type', 'application/x-bittorrent');
     res.setHeader('Content-Disposition', `attachment; filename="${safeName}.torrent"`);
 
+    // Send the buffer
     return res.status(200).send(torrentBuffer);
 
   } catch (error) {
-    console.error('Torrent parsing error:', error);
+    console.error('Processing Error:', error);
     return res.status(500).json({ 
-      error: 'Failed to process torrent', 
+      error: 'Failed to generate torrent file', 
       message: error.message 
     });
   }
