@@ -1,4 +1,4 @@
-import parseTorrent, { toTorrentFile } from "parse-torrent";
+import parseTorrent from 'parse-torrent'
 
 export default async function handler(req, res) {
   try {
@@ -8,32 +8,48 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'URL query parameter is required' });
     }
 
-    // parseTorrent can fetch metadata from a magnet link or a remote URL
-    // We wrap it in a promise to handle it cleanly in the async handler
+    // Modern parse-torrent usage: Use parseTorrent.remote directly 
+    // or fetch the buffer manually if it's a direct .torrent URL.
     const torrentData = await new Promise((resolve, reject) => {
       parseTorrent.remote(url, (err, parsed) => {
-        if (err) reject(err);
-        else resolve(parsed);
+        if (err) {
+          // If remote fails, it might be because the URL is a direct link
+          // we try to parse the URL string itself (for magnets)
+          try {
+            const simpleParse = parseTorrent(url);
+            resolve(simpleParse);
+          } catch (e) {
+            reject(err);
+          }
+        } else {
+          resolve(parsed);
+        }
       });
     });
 
-    // Convert the parsed metadata back into a .torrent file buffer
-    const torrentBuffer = toTorrentFile(torrentData);
+    // Check if we have enough data to build a file
+    if (!torrentData || !torrentData.infoHash) {
+      throw new Error("Invalid torrent metadata received.");
+    }
 
-    // Set headers to force download in the browser
-    const fileName = torrentData.name ? `${torrentData.name}.torrent` : 'download.torrent';
-    
+    // Convert parsed metadata to a .torrent file buffer
+    const torrentBuffer = parseTorrent.toTorrentFile(torrentData);
+
+    // Clean up the filename (remove special characters)
+    const rawName = torrentData.name || 'download';
+    const safeName = rawName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+
+    // Set Headers
     res.setHeader('Content-Type', 'application/x-bittorrent');
-    res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(fileName)}"`);
-    
-    // Send the buffer
+    res.setHeader('Content-Disposition', `attachment; filename="${safeName}.torrent"`);
+
     return res.status(200).send(torrentBuffer);
 
   } catch (error) {
     console.error('Torrent parsing error:', error);
     return res.status(500).json({ 
-      error: 'Failed to parse torrent metadata', 
-      details: error.message 
+      error: 'Failed to process torrent', 
+      message: error.message 
     });
   }
 }
