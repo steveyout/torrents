@@ -16,7 +16,6 @@ import CardContent from '@mui/material/CardContent';
 
 // ----------------------------------------------------------------------
 
-// Helper to construct TMDB image URLs
 const getPosterUrl = (path) =>
   path ? `${process.env.NEXT_PUBLIC_TMDB_IMAGE_BASE_URL}${path}` : '/assets/placeholder.jpg';
 
@@ -27,7 +26,6 @@ export function PostItem({ post, index = 0 }) {
 
   const { id, title, name, release_date, first_air_date, poster_path, vote_average, media_type } = post;
 
-  // TV shows use 'name', movies use 'title'
   const displayTitle = title || name || 'Untitled';
   const displayDate = release_date || first_air_date;
   const releaseYear = displayDate ? new Date(displayDate).getFullYear() : null;
@@ -140,7 +138,6 @@ export function PostItem({ post, index = 0 }) {
             />
           </Box>
 
-          {/* Hover gradient overlay */}
           <Box
             className="youplex-poster-overlay"
             sx={{
@@ -156,7 +153,6 @@ export function PostItem({ post, index = 0 }) {
             }}
           />
 
-          {/* Glass shine sweep on hover */}
           <Box
             className="youplex-card-shine"
             sx={{
@@ -174,7 +170,6 @@ export function PostItem({ post, index = 0 }) {
             }}
           />
 
-          {/* Hover play button */}
           <Box
             className="youplex-card-fab"
             sx={{
@@ -197,7 +192,7 @@ export function PostItem({ post, index = 0 }) {
               backdropFilter: 'blur(8px)',
             }}
           >
-            <Iconify icon="solar:play-bold" width={22} sx={{ ml: 0.3 }} />
+            <Iconify icon="solar:download-bold" width={22} />
           </Box>
         </Box>
 
@@ -326,7 +321,7 @@ export function PostItemLatest({ post, index = 0 }) {
               boxShadow: `0 4px 14px ${varAlpha(theme.vars.palette.primary.mainChannel, 0.5)}`,
             }}
           >
-            Featured
+            Torrents
           </Label>
         </Stack>
 
@@ -345,7 +340,6 @@ export function PostItemLatest({ post, index = 0 }) {
           />
         </Box>
 
-        {/* Glass shine sweep on hover */}
         <Box
           className="youplex-card-shine"
           sx={{
@@ -363,7 +357,6 @@ export function PostItemLatest({ post, index = 0 }) {
           }}
         />
 
-        {/* Hover play button */}
         <Box
           className="youplex-card-fab"
           sx={{
@@ -386,7 +379,7 @@ export function PostItemLatest({ post, index = 0 }) {
             backdropFilter: 'blur(8px)',
           }}
         >
-          <Iconify icon="solar:play-bold" width={26} sx={{ ml: 0.3 }} />
+          <Iconify icon="solar:download-square-bold" width={26} />
         </Box>
 
         <CardContent
@@ -431,8 +424,8 @@ export function PostItemLatest({ post, index = 0 }) {
 
           <Stack direction="row" spacing={2} sx={{ mt: 2, typography: 'subtitle2' }}>
             <Stack direction="row" alignItems="center" spacing={0.5} sx={{ color: 'primary.light', fontWeight: 700 }}>
-              <Iconify icon="solar:play-circle-bold" width={18} />
-              Watch Now
+              <Iconify icon="solar:download-square-bold" width={18} />
+              Get Torrents
             </Stack>
           </Stack>
         </CardContent>

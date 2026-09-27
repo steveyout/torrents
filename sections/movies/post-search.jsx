@@ -14,11 +14,11 @@ import { Iconify } from '@/components/iconify';
 import { SearchNotFound } from '@/components/search-not-found';
 
 import { varAlpha } from 'theme/styles';
-import Box from "@mui/material/Box";
+import Box from '@mui/material/Box';
 
 // ----------------------------------------------------------------------
 
-export function PostSearch({ query, results, onSearch, hrefItem, loading }) {
+export function PostSearch({ query, results, onSearch, hrefItem, loading, sx }) {
   const theme = useTheme();
 
   const router = useRouter();
@@ -38,7 +38,10 @@ export function PostSearch({ query, results, onSearch, hrefItem, loading }) {
 
   return (
     <Autocomplete
-      sx={{ width: { xs: 1, sm: 260 } }}
+      sx={{
+        width: { xs: 1, sm: 300 },
+        ...sx,
+      }}
       loading={loading}
       autoHighlight
       popupIcon={null}
@@ -78,7 +81,7 @@ export function PostSearch({ query, results, onSearch, hrefItem, loading }) {
             ),
             endAdornment: (
               <>
-                {loading ? <Iconify icon="svg-spinners:8-dots-rotate" sx={{ mr: -3 }} /> : null}
+                {loading ? <Iconify icon="svg-spinners:8-dots-rotate" sx={{ mr: 1, color: 'primary.main' }} /> : null}
                 {params.InputProps.endAdornment}
               </>
             ),
@@ -135,8 +138,8 @@ export function PostSearch({ query, results, onSearch, hrefItem, loading }) {
                 ))}
               </Typography>
 
-              <Typography variant="caption" sx={{ color: 'text.disabled', textTransform: 'capitalize' }}>
-                {item.media_type || (item.first_air_date ? 'tv' : 'movie')} • {year || 'N/A'}
+              <Typography component="span" variant="caption" sx={{ color: 'text.secondary' }}>
+                {Number.isNaN(year) ? '' : year}
               </Typography>
             </div>
           </li>

@@ -1,11 +1,11 @@
-FROM qwen3.5:9b
+FROM gemma4:12b
 
-SYSTEM """
-/no_think
-You are an AI software developer integrated into WebStorm via ACP.
-Respond directly to coding requests using plain Markdown.
-Do NOT output raw JSON tool code or speculative internal monologues.
-"""
+# Force parameters that break thinking and token loops
+PARAMETER repeat_penalty 1.18
+PARAMETER repeat_last_n 256
+PARAMETER temperature 0.7
+PARAMETER num_ctx 16384
 
-PARAMETER temperature 0.2
-PARAMETER num_ctx 40960
+# Crucial for deep-thinking agent workflows
+PARAMETER stop "<|im_end|>"
+PARAMETER stop "<|end_of_turn|>"

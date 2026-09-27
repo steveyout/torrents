@@ -1,6 +1,6 @@
 import '@/global.css';
 
-import Script from 'next/script'
+import Script from 'next/script';
 import { CONFIG } from '@/config-global';
 import PRIMARY_COLOR from '@/theme/with-settings/primary-color.json';
 import { LocalizationProvider } from '@/locales';
@@ -15,19 +15,86 @@ import { detectSettings } from '@/components/settings/server';
 import { getInitColorSchemeScript } from '@/theme/color-scheme-script';
 import { SettingsDrawer, defaultSettings, SettingsProvider } from '@/components/settings';
 
-
 // ----------------------------------------------------------------------
 
 export const metadata = {
-  title: 'Youplex- Stream Movies',
+  title: {
+    default: 'Youplex - Fast Torrent Search Engine & Magnet Links',
+    template: '%s | Youplex Torrents',
+  },
+  description:
+    'Search and download verified torrents & magnet links across major torrent sites: The Pirate Bay (TPB), 1337x, YTS, LimeTorrents, TorrentGalaxy, EZTV, RARBG, and FitGirl Repacks. Fast, high-speed seeds for 4K/1080p Movies, TV Series, PC Games, FLAC Music, Audiobooks, and Books.',
+  keywords: [
+    'The Pirate Bay',
+    'PirateBay',
+    'TPB',
+    '1337x',
+    'YTS',
+    'YIFY',
+    'LimeTorrents',
+    'TorrentGalaxy',
+    'TGx',
+    'EZTV',
+    'RARBG',
+    'FitGirl Repacks',
+    'DODI Repacks',
+    'Nyaa',
+    'Rutracker',
+    'AudioBookBay',
+    'Internet Archive',
+    'Torrent search engine',
+    'Magnet search',
+    'Download torrents free',
+    'Movies torrents 1080p 4K UHD',
+    'TV series torrents packs',
+    'PC games torrent repacks',
+    'Lossless FLAC music torrents',
+    'Audiobooks torrents free',
+    'eBooks PDF EPUB torrents',
+    'Verified torrents',
+    'Fast torrent download',
+    'Jackett torznab search',
+    'BitTorrent magnet links',
+  ],
+  openGraph: {
+    type: 'website',
+    locale: 'en_US',
+    url: 'https://youplex.site',
+    siteName: 'Youplex Torrents',
+    title: 'Youplex - Fast Torrent Search Engine & Magnet Links',
+    description:
+      'Universal torrent search engine indexing The Pirate Bay, 1337x, YTS, LimeTorrents, TorrentGalaxy, EZTV, and FitGirl. 1-click magnet links and high-speed downloads.',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Youplex - Fast Torrent Search Engine & Magnet Links',
+    description:
+      'Download verified torrents and magnet links across major torrent sites: The Pirate Bay, 1337x, YTS, LimeTorrents, TorrentGalaxy, and more.',
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'Youplex',
+    title: 'Youplex Torrents',
   },
   formatDetection: {
     telephone: false,
+  },
+  other: {
+    'torrent:trackers':
+      'The Pirate Bay, 1337x, YTS, LimeTorrents, TorrentGalaxy, EZTV, FitGirl, Internet Archive',
+    'torrent:categories': 'Movies, TV Shows, Games, Music, Audiobooks, Books',
   },
 };
 
@@ -48,21 +115,21 @@ export default async function RootLayout({ children }) {
         {getInitColorSchemeScript}
         <I18nProvider lang={CONFIG.isStaticExport ? undefined : lang}>
           <LocalizationProvider>
-              <SettingsProvider
-                settings={settings}
-                caches={CONFIG.isStaticExport ? 'localStorage' : 'cookie'}
-              >
-                <ThemeProvider>
-                  <MotionLazy>
-                      <Snackbar />
-                      <ProgressBar />
-                      <SettingsDrawer />
-                    {/* Google tag (gtag.js) */}
-                    <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ?? ""} />
-                    {children}
-                  </MotionLazy>
-                </ThemeProvider>
-              </SettingsProvider>
+            <SettingsProvider
+              settings={settings}
+              caches={CONFIG.isStaticExport ? 'localStorage' : 'cookie'}
+            >
+              <ThemeProvider>
+                <MotionLazy>
+                  <Snackbar />
+                  <ProgressBar />
+                  <SettingsDrawer />
+                  {/* Google tag (gtag.js) */}
+                  <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ?? ''} />
+                  {children}
+                </MotionLazy>
+              </ThemeProvider>
+            </SettingsProvider>
           </LocalizationProvider>
         </I18nProvider>
       </body>

@@ -1,0 +1,10 @@
+{
+  "extends": [
+    "airbnb",
+    "plugin:@next/next/recommended"
+  ],
+  "rules": {
+    "react/require-default-props": "off",
+    "no-prototype-builtins": "off"
+  }
+}

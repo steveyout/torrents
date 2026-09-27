@@ -5,13 +5,18 @@ import { paths } from '@/routes/paths';
 import { varAlpha } from '@/theme/styles';
 import { searchMedia } from '@/actions/api';
 import { Iconify } from '@/components/iconify';
+import { TorrentTable } from '@/components/torrents';
 import { useDebounce } from '@/hooks/use-debounce';
-import { useMemo, useState, useCallback } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
+import Button from '@mui/material/Button';
 import Container from '@mui/material/Container';
+import TextField from '@mui/material/TextField';
+import IconButton from '@mui/material/IconButton';
+import InputAdornment from '@mui/material/InputAdornment';
 import { useTheme } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
 
@@ -32,6 +37,10 @@ const CATEGORY_TABS = [
   { id: 'all', label: 'All Content', icon: 'solar:widget-2-bold' },
   { id: 'movies', label: 'Movies', icon: 'solar:clapperboard-play-bold' },
   { id: 'tv', label: 'TV Shows', icon: 'solar:tv-bold' },
+  { id: 'games', label: 'Games', icon: 'solar:gamepad-bold' },
+  { id: 'music', label: 'Music', icon: 'solar:music-note-bold' },
+  { id: 'audio', label: 'Audio', icon: 'solar:headphones-round-sound-bold' },
+  { id: 'books', label: 'Books', icon: 'solar:book-bookmark-bold' },
 ];
 
 export function PostListHomeView({ categories }) {
@@ -42,7 +51,38 @@ export function PostListHomeView({ categories }) {
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
 
+  const [categoryTorrents, setCategoryTorrents] = useState({});
+  const [torrentsLoading, setTorrentsLoading] = useState(false);
+  const [catSearchQuery, setCatSearchQuery] = useState('');
+
   const debouncedQuery = useDebounce(searchQuery);
+
+  const isTorrentsOnlyCategory = ['games', 'music', 'audio', 'books'].includes(activeTab);
+
+  const fetchCategoryTorrents = useCallback(async (cat, query = '') => {
+    setTorrentsLoading(true);
+    try {
+      const params = new URLSearchParams({ category: cat });
+      if (query.trim()) params.set('q', query.trim());
+      const res = await fetch(`/api/torrents?${params.toString()}`);
+      if (res.ok) {
+        const data = await res.json();
+        setCategoryTorrents((prev) => ({ ...prev, [cat]: data.torrents || [] }));
+      }
+    } catch (err) {
+      console.error(`Failed to fetch ${cat} torrents:`, err);
+    } finally {
+      setTorrentsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isTorrentsOnlyCategory) {
+      if (!categoryTorrents[activeTab]) {
+        fetchCategoryTorrents(activeTab, '');
+      }
+    }
+  }, [activeTab, isTorrentsOnlyCategory, categoryTorrents, fetchCategoryTorrents]);
 
   const handleSearch = useCallback(async (inputValue) => {
     setSearchQuery(inputValue);
@@ -68,11 +108,11 @@ export function PostListHomeView({ categories }) {
   const formatSectionTitle = (key) => {
     switch (key) {
       case 'trending':
-        return 'Trending Now';
+        return 'Trending Movies & Shows';
       case 'popularMovies':
         return 'Popular Movies';
       case 'topRatedTv':
-        return 'Critically Acclaimed Shows';
+        return 'Top Rated TV Shows';
       case 'upcoming':
         return 'Upcoming Releases';
       default: {
@@ -118,7 +158,6 @@ export function PostListHomeView({ categories }) {
 
   return (
     <Box sx={{ position: 'relative', overflow: 'hidden' }}>
-      {/* Ambient background glow */}
       <Box
         sx={{
           position: 'absolute',
@@ -138,53 +177,67 @@ export function PostListHomeView({ categories }) {
       <HeroBanner items={categories?.trending?.slice(0, 5)} />
 
       <Container sx={{ pb: 12, position: 'relative', zIndex: 1 }}>
-        {/* Category switcher & search toolbar */}
-        <Stack
-          spacing={2.5}
-          justifyContent="space-between"
-          alignItems={{ xs: 'stretch', sm: 'center' }}
-          direction={{ xs: 'column', sm: 'row' }}
-          sx={{ py: { xs: 3, md: 5 } }}
+        {/* Tier 1: Category Navigation Tabs */}
+        <Box
+          sx={{
+            pt: { xs: 3, md: 4 },
+            pb: 2,
+            display: 'flex',
+            justifyContent: { xs: 'flex-start', sm: 'center' },
+          }}
         >
-          {/* Category Tabs */}
-          <Stack direction="row" spacing={1} sx={{ overflowX: 'auto', pb: { xs: 0.5, sm: 0 } }}>
+          <Box
+            sx={{
+              p: 0.75,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 0.75,
+              maxWidth: '100%',
+              overflowX: 'auto',
+              scrollbarWidth: 'none',
+              '&::-webkit-scrollbar': { display: 'none' },
+              borderRadius: 3,
+              bgcolor: (t) => varAlpha(t.vars.palette.background.paperChannel, 0.55),
+              border: (t) => `1px solid ${varAlpha(t.vars.palette.divider, 0.12)}`,
+              backdropFilter: 'blur(16px)',
+              boxShadow: (t) => `0 4px 24px -4px ${varAlpha(t.vars.palette.common.blackChannel, 0.18)}`,
+            }}
+          >
             {CATEGORY_TABS.map((tab) => {
               const active = activeTab === tab.id;
               return (
                 <Box
                   key={tab.id}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => setActiveTab(tab.id)}
+                  component="button"
+                  type="button"
+                  onClick={() => {
+                    setActiveTab(tab.id);
+                    setCatSearchQuery('');
+                  }}
                   sx={{
-                    display: 'flex',
+                    all: 'unset',
+                    boxSizing: 'border-box',
+                    display: 'inline-flex',
                     alignItems: 'center',
                     gap: 1,
-                    px: 2.2,
-                    py: 0.8,
-                    borderRadius: 999,
+                    px: { xs: 1.75, sm: 2.25 },
+                    py: 1,
+                    borderRadius: 2.25,
                     cursor: 'pointer',
-                    fontWeight: active ? 700 : 600,
+                    fontWeight: active ? 700 : 500,
                     fontSize: '0.875rem',
+                    whiteSpace: 'nowrap',
                     color: active ? 'common.white' : 'text.secondary',
-                    bgcolor: active
-                      ? 'primary.main'
-                      : varAlpha(theme.vars.palette.background.paperChannel, 0.4),
-                    border: '1px solid',
-                    borderColor: active
-                      ? 'primary.main'
-                      : varAlpha(theme.vars.palette.divider, 0.12),
+                    bgcolor: active ? 'primary.main' : 'transparent',
                     boxShadow: active
-                      ? `0 6px 20px ${varAlpha(theme.vars.palette.primary.mainChannel, 0.45)}`
+                      ? (t) => `0 4px 16px ${varAlpha(t.vars.palette.primary.mainChannel, 0.42)}`
                       : 'none',
-                    backdropFilter: 'blur(10px)',
-                    transition: 'all 0.25s ease',
+                    transition: 'all 0.22s cubic-bezier(0.4, 0, 0.2, 1)',
                     '&:hover': {
                       color: active ? 'common.white' : 'text.primary',
-                      borderColor: active
+                      bgcolor: active
                         ? 'primary.main'
-                        : varAlpha(theme.vars.palette.primary.mainChannel, 0.4),
-                      transform: 'translateY(-1px)',
+                        : (t) => varAlpha(t.vars.palette.action.hoverChannel, 0.08),
                     },
                   }}
                 >
@@ -193,49 +246,181 @@ export function PostListHomeView({ categories }) {
                 </Box>
               );
             })}
-          </Stack>
+          </Box>
+        </Box>
 
-          {/* Search & Sort Controls */}
-          <Stack direction="row" spacing={1.5} alignItems="center" flexShrink={0}>
-            <PostSearch
-              query={debouncedQuery}
-              results={searchResults}
-              onSearch={handleSearch}
-              loading={searchLoading}
-              hrefItem={(item) => {
-                const type = item.media_type || (item.first_air_date ? 'tv' : 'movie');
-                const title = item.title || item.name;
-                return paths.watch.details(type, item.id, title);
-              }}
+        {/* Tier 2: Dedicated Search & Filter Controls */}
+        <Stack
+          direction={{ xs: 'column', md: 'row' }}
+          spacing={2}
+          justifyContent="space-between"
+          alignItems={{ xs: 'stretch', md: 'center' }}
+          sx={{ mb: 4, mt: 1.5 }}
+        >
+          {/* Active Section Context */}
+          <Stack direction="row" spacing={1.5} alignItems="center">
+            <Iconify
+              icon={
+                activeTab === 'all'
+                  ? 'solar:widget-2-bold'
+                  : activeTab === 'movies'
+                  ? 'solar:clapperboard-play-bold'
+                  : activeTab === 'tv'
+                  ? 'solar:tv-bold'
+                  : activeTab === 'games'
+                  ? 'solar:gamepad-bold'
+                  : activeTab === 'music'
+                  ? 'solar:music-note-bold'
+                  : activeTab === 'audio'
+                  ? 'solar:headphones-round-sound-bold'
+                  : 'solar:book-bookmark-bold'
+              }
+              width={24}
+              sx={{ color: 'primary.main' }}
             />
-            <PostSort sort={sortBy} onSort={handleSortBy} sortOptions={SORT_OPTIONS} />
+            <Typography variant="h5" fontWeight={700}>
+              {activeTab === 'all'
+                ? 'Featured & Highlights'
+                : activeTab === 'movies'
+                ? 'Movies Collection'
+                : activeTab === 'tv'
+                ? 'TV Series Collection'
+                : `${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Torrents`}
+            </Typography>
+          </Stack>
+
+          {/* Spacious Search and Controls */}
+          <Stack
+            direction="row"
+            spacing={1.5}
+            alignItems="center"
+            sx={{ width: { xs: 1, md: 'auto' } }}
+          >
+            {!isTorrentsOnlyCategory ? (
+              <>
+                <PostSearch
+                  query={debouncedQuery}
+                  results={searchResults}
+                  onSearch={handleSearch}
+                  loading={searchLoading}
+                  sx={{ width: { xs: 1, sm: 320, md: 380 } }}
+                  hrefItem={(item) => {
+                    const type = item.media_type || (item.first_air_date ? 'tv' : 'movie');
+                    const title = item.title || item.name;
+                    return paths.watch.details(type, item.id, title);
+                  }}
+                />
+                <PostSort sort={sortBy} onSort={handleSortBy} sortOptions={SORT_OPTIONS} />
+              </>
+            ) : (
+              <Stack
+                direction="row"
+                spacing={1}
+                sx={{ width: { xs: 1, md: 'auto' }, flexGrow: { xs: 1, md: 0 } }}
+              >
+                <TextField
+                  size="small"
+                  placeholder={`Search ${activeTab} torrents...`}
+                  value={catSearchQuery}
+                  onChange={(e) => setCatSearchQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      fetchCategoryTorrents(activeTab, catSearchQuery);
+                    }
+                  }}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Iconify icon="solar:magnifer-bold" width={18} sx={{ color: 'text.disabled' }} />
+                      </InputAdornment>
+                    ),
+                    endAdornment: catSearchQuery ? (
+                      <InputAdornment position="end">
+                        <IconButton
+                          size="small"
+                          onClick={() => {
+                            setCatSearchQuery('');
+                            fetchCategoryTorrents(activeTab, '');
+                          }}
+                          edge="end"
+                        >
+                          <Iconify icon="solar:close-circle-bold" width={16} sx={{ color: 'text.disabled' }} />
+                        </IconButton>
+                      </InputAdornment>
+                    ) : null,
+                  }}
+                  sx={{ width: { xs: 1, sm: 280, md: 340 } }}
+                />
+                <Button
+                  variant="contained"
+                  size="small"
+                  onClick={() => fetchCategoryTorrents(activeTab, catSearchQuery)}
+                  sx={{ minWidth: 84, px: 2 }}
+                >
+                  Search
+                </Button>
+                <Button
+                  size="small"
+                  variant="soft"
+                  color="inherit"
+                  startIcon={<Iconify icon="solar:refresh-bold" width={16} />}
+                  onClick={() => fetchCategoryTorrents(activeTab, catSearchQuery)}
+                  disabled={torrentsLoading}
+                >
+                  Refresh
+                </Button>
+              </Stack>
+            )}
           </Stack>
         </Stack>
 
-        {/* Dynamic Sections */}
-        <Stack spacing={8}>
-          {Object.keys(filteredCategories).map((key, sectionIdx) => {
-            let items = filteredCategories[key];
-            if (!items || items.length === 0) return null;
+        {isTorrentsOnlyCategory ? (
+          <Box sx={{ mt: 1 }}>
+            <TorrentTable
+              torrents={categoryTorrents[activeTab] || []}
+              title={`Top ${activeTab.toUpperCase()} Releases`}
+              isLoading={torrentsLoading}
+            />
+          </Box>
+        ) : (
+          <Stack spacing={8}>
+            {Object.keys(filteredCategories).map((key, sectionIdx) => {
+              let items = filteredCategories[key];
+              if (!items || items.length === 0) return null;
 
-            if (key === 'trending' && items.length > 5 && activeTab === 'all') {
-              items = items.slice(5);
-            }
+              if (key === 'trending' && items.length > 5 && activeTab === 'all') {
+                items = items.slice(5);
+              }
 
-            const filteredItems = applyFilter(items, sortBy);
+              const filteredItems = applyFilter(items, sortBy);
 
-            return (
-              <BoxSection
-                key={key}
-                sectionKey={key}
-                title={formatSectionTitle(key)}
-                icon={getSectionIcon(key)}
-                posts={filteredItems}
-                index={sectionIdx}
-              />
-            );
-          })}
-        </Stack>
+              return (
+                <Box key={key}>
+                  <Stack direction="row" alignItems="center" spacing={1.5} sx={{ mb: 3 }}>
+                    <Iconify icon={getSectionIcon(key)} width={24} sx={{ color: 'primary.main' }} />
+                    <Typography variant="h4" fontWeight={700}>
+                      {formatSectionTitle(key)}
+                    </Typography>
+                    <Chip
+                      label={filteredItems.length}
+                      size="small"
+                      color="primary"
+                      variant="soft"
+                      sx={{ fontWeight: 600, fontSize: '0.75rem' }}
+                    />
+                  </Stack>
+
+                  <PostList
+                    posts={filteredItems}
+                    loading={false}
+                    categoryKey={key}
+                    activeTab={activeTab}
+                  />
+                </Box>
+              );
+            })}
+          </Stack>
+        )}
       </Container>
     </Box>
   );
@@ -243,82 +428,26 @@ export function PostListHomeView({ categories }) {
 
 // ----------------------------------------------------------------------
 
-function BoxSection({ sectionKey, title, icon, posts, index }) {
-  const theme = useTheme();
+function applyFilter(items, sortBy) {
+  if (!items) return [];
 
-  return (
-    <Stack spacing={3}>
-      <m.div
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, amount: 0.3 }}
-        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-      >
-        <Stack direction="row" alignItems="center" justifyContent="space-between">
-          <Typography
-            variant="h5"
-            sx={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 1.5,
-              fontWeight: 800,
-              letterSpacing: '-0.01em',
-            }}
-          >
-            <Box
-              sx={{
-                width: 6,
-                height: 24,
-                flexShrink: 0,
-                borderRadius: 999,
-                background: (t) =>
-                  `linear-gradient(180deg, ${t.vars.palette.primary.light}, ${t.vars.palette.primary.main})`,
-                boxShadow: (t) =>
-                  `0 0 16px ${varAlpha(t.vars.palette.primary.mainChannel, 0.6)}`,
-              }}
-            />
-            {title}
-            <Chip
-              size="small"
-              label={posts.length}
-              sx={{
-                height: 22,
-                fontSize: '0.72rem',
-                fontWeight: 700,
-                bgcolor: varAlpha(theme.vars.palette.primary.mainChannel, 0.1),
-                color: 'primary.main',
-                border: `1px solid ${varAlpha(theme.vars.palette.primary.mainChannel, 0.2)}`,
-                borderRadius: 1,
-              }}
-            />
-          </Typography>
-        </Stack>
-      </m.div>
-
-      <PostList posts={posts} startIndex={(index ?? 0) * 4} />
-    </Stack>
-  );
-}
-
-// ----------------------------------------------------------------------
-
-const applyFilter = (inputData, sortBy) => {
-  if (!inputData) return [];
-  const data = [...inputData];
+  const cloned = [...items];
 
   if (sortBy === 'latest') {
-    return data.sort((a, b) =>
-      new Date(b.release_date || b.first_air_date) - new Date(a.release_date || a.first_air_date)
-    );
+    return cloned.sort((a, b) => {
+      const dateA = new Date(a.release_date || a.first_air_date || 0);
+      const dateB = new Date(b.release_date || b.first_air_date || 0);
+      return dateB - dateA;
+    });
   }
 
   if (sortBy === 'popular') {
-    return data.sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
+    return cloned.sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
   }
 
   if (sortBy === 'topRated') {
-    return data.sort((a, b) => (b.vote_average || 0) - (a.vote_average || 0));
+    return cloned.sort((a, b) => (b.vote_average || 0) - (a.vote_average || 0));
   }
 
-  return data;
-};
+  return cloned;
+}

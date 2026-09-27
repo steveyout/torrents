@@ -5,12 +5,12 @@ import { PostListHomeView } from '@/sections/movies/view';
 // ----------------------------------------------------------------------
 
 export const metadata = {
-  title: `Watch TV Series Online - ${CONFIG.site.name}`,
-  description: `Stream your favorite TV shows, binge-watch top-rated series, and discover new episodes airing today on ${CONFIG.site.name}.`,
-  keywords: 'watch tv shows, stream series online, binge watch, top rated tv series, tv shows online',
+  title: `TV Series Torrents - ${CONFIG.site.name}`,
+  description: `Download verified TV show torrents, season packs, and latest episodes on ${CONFIG.site.name}.`,
+  keywords: 'tv show torrents, season pack torrents, tv series download, magnet links, the pirate bay',
   openGraph: {
-    title: `Explore Top TV Series - ${CONFIG.site.name}`,
-    description: `Browse our massive library of TV series on ${CONFIG.site.name}.`,
+    title: `Explore TV Show Torrents - ${CONFIG.site.name}`,
+    description: `Browse verified TV series torrents on ${CONFIG.site.name}.`,
     type: 'website',
   },
 };
@@ -29,8 +29,6 @@ export default async function Page() {
     getTvShows('airing_today'),
   ]);
 
-  // Organizing data for the dynamic PostListHomeView
-  // The keys here will be formatted as titles: "Popular", "Top Rated", etc.
   const data = {
     airingToday: airingTodayData?.results || [],
     onTheAir: onTheAirData?.results || [],

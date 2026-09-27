@@ -1,35 +1,54 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { fDate } from '@/utils/format-time';
 import { Iconify } from '@/components/iconify';
 import { PostItem } from '@/sections/movies/post-item';
+import { TorrentTable } from '@/components/torrents';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { getMovieOrShow, getRecommendations } from '@/actions/api';
 
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
+import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
-import { alpha } from '@mui/material/styles';
+import MenuItem from '@mui/material/MenuItem';
+import TextField from '@mui/material/TextField';
+import { alpha, useTheme } from '@mui/material/styles';
 import Skeleton from '@mui/material/Skeleton';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
+import CardHeader from '@mui/material/CardHeader';
+import CardContent from '@mui/material/CardContent';
 
 // ----------------------------------------------------------------------
 
-export default function WatchPage() {
-  const { type, title } = useParams();
+export default function TorrentDetailPage() {
+  const theme = useTheme();
+  const router = useRouter();
+  const { type, title: titleSlug } = useParams();
   const searchParams = useSearchParams();
   const id = searchParams.get('id');
-  const season = searchParams.get('season');
-  const episode = searchParams.get('episode');
+  const initialSeason = searchParams.get('season') || searchParams.get('sn');
+  const initialEpisode = searchParams.get('episode') || searchParams.get('ep');
 
   const [movieOrShow, setMovieOrShow] = useState(null);
   const [recommendations, setRecommendations] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // TV Season / Episode selection
+  const [selectedSeason, setSelectedSeason] = useState(Number(initialSeason) || 1);
+  const [selectedEpisode, setSelectedEpisode] = useState(Number(initialEpisode) || 1);
+
+  // Torrents state
+  const [torrents, setTorrents] = useState([]);
+  const [torrentsLoading, setTorrentsLoading] = useState(false);
+  const [torrentsError, setTorrentsError] = useState(null);
+  const [customQuery, setCustomQuery] = useState('');
+
+  // Fetch TMDB Metadata
   useEffect(() => {
     let active = true;
 
@@ -43,7 +62,13 @@ export default function WatchPage() {
 
     getMovieOrShow(type, id)
       .then((data) => {
-        if (active) setMovieOrShow(data);
+        if (active) {
+          setMovieOrShow(data);
+          const firstSeason = data?.seasons?.find((s) => s.season_number > 0);
+          if (firstSeason && !initialSeason) {
+            setSelectedSeason(firstSeason.season_number);
+          }
+        }
       })
       .catch((err) => {
         if (active) setError(err?.message || 'Something went wrong while loading this title.');
@@ -63,89 +88,67 @@ export default function WatchPage() {
     return () => {
       active = false;
     };
-  }, [type, id, season, episode]);
+  }, [type, id, initialSeason]);
 
-  if (isLoading) return <WatchSkeleton />;
+  // Fetch Torrents from Jackett API
+  const fetchJackettTorrents = useCallback(
+    async (searchTerm) => {
+      if (!searchTerm) return;
+      setTorrentsLoading(true);
+      setTorrentsError(null);
 
-  if (error || !movieOrShow) return <WatchError error={error} title={title} />;
+      try {
+        const isTv = type === 'tv';
+        const params = new URLSearchParams({
+          q: searchTerm,
+          category: isTv ? 'tv' : 'movies',
+        });
 
-  const firstSeason = movieOrShow.seasons?.find((item) => item.season_number > 0);
-  const selectedSeason = season || (type === 'tv' ? String(firstSeason?.season_number || 1) : '');
-  const selectedEpisode = episode || (type === 'tv' ? '1' : '');
-  const params = new URLSearchParams({ id: id || '' });
-  if (selectedSeason) params.set('season', selectedSeason);
-  if (selectedEpisode && type === 'tv') params.set('episode', selectedEpisode);
-  const playPath = `/watch/${type}/${title}/play?${params.toString()}`;
+        if (isTv) {
+          params.set('season', String(selectedSeason));
+          params.set('ep', String(selectedEpisode));
+        } else {
+          const year = movieOrShow?.release_date
+            ? new Date(movieOrShow.release_date).getFullYear()
+            : '';
+          if (year) params.set('year', String(year));
+        }
 
-  return (
-    <WatchContent
-      movieOrShow={movieOrShow}
-      type={type}
-      id={id}
-      playPath={playPath}
-      recommendations={recommendations}
-    />
+        const res = await fetch(`/api/torrents?${params.toString()}`);
+        if (!res.ok) throw new Error('Failed to retrieve torrents');
+        const data = await res.json();
+
+        setTorrents(data.torrents || []);
+      } catch (err) {
+        console.error('Torrent fetch error:', err);
+        setTorrentsError(err.message || 'Unable to connect to torrent indexers');
+      } finally {
+        setTorrentsLoading(false);
+      }
+    },
+    [type, selectedSeason, selectedEpisode, movieOrShow]
   );
-}
 
-// ----------------------------------------------------------------------
+  // Trigger torrent search when media or season/ep changes
+  useEffect(() => {
+    const rawTitle = movieOrShow?.title || movieOrShow?.name;
+    if (rawTitle) {
+      fetchJackettTorrents(customQuery || rawTitle);
+    }
+  }, [movieOrShow, selectedSeason, selectedEpisode, fetchJackettTorrents, customQuery]);
 
-function WatchSkeleton() {
-  return (
-    <Container maxWidth="lg" sx={{ py: { xs: 3, md: 5 } }}>
-      <Stack spacing={4}>
-        <Stack direction="row" spacing={3} alignItems="center">
-          <Skeleton variant="rounded" sx={{ width: 220, height: 320, display: { xs: 'none', sm: 'block' } }} />
-          <Stack spacing={1.5} sx={{ width: 1 }}>
-            <Skeleton width="30%" height={28} />
-            <Skeleton width="70%" height={52} />
-            <Skeleton width="45%" height={20} />
-            <Skeleton width="100%" height={20} />
-            <Skeleton width="90%" height={20} />
-          </Stack>
-        </Stack>
-        <Skeleton variant="rounded" sx={{ width: 1, aspectRatio: '16/9' }} />
-      </Stack>
-    </Container>
-  );
-}
+  if (isLoading) return <DetailSkeleton />;
+  if (error || !movieOrShow) return <DetailError error={error} title={titleSlug} />;
 
-// ----------------------------------------------------------------------
-
-function WatchError({ error }) {
-  return (
-    <Container sx={{ py: 12, display: 'grid', placeItems: 'center' }}>
-      <Stack alignItems="center" spacing={2} textAlign="center" sx={{ maxWidth: 420 }}>
-        <Iconify icon="solar:shield-warning-bold" width={56} sx={{ color: 'text.disabled' }} />
-        <Typography variant="h5">We couldn&apos;t load this title</Typography>
-        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-          {error}
-        </Typography>
-        <Button
-          variant="contained"
-          startIcon={<Iconify icon="solar:refresh-bold" width={18} />}
-          onClick={() => window.location.reload()}
-        >
-          Try Again
-        </Button>
-      </Stack>
-    </Container>
-  );
-}
-
-// ----------------------------------------------------------------------
-
-function WatchContent({ movieOrShow, type, id, playPath, recommendations = [] }) {
-  const router = useRouter();
   const isTv = type === 'tv';
   const displayTitle = movieOrShow.title || movieOrShow.name || '';
   const releaseDate = movieOrShow.release_date || movieOrShow.first_air_date;
+  const releaseYear = releaseDate ? new Date(releaseDate).getFullYear() : null;
   const rating = movieOrShow.vote_average || 0;
-  const {runtime} = movieOrShow;
+  const { runtime } = movieOrShow;
   const runtimeLabel = runtime ? `${Math.floor(runtime / 60)}h ${runtime % 60}m` : null;
   const genres = movieOrShow.genres || [];
   const cast = movieOrShow.credits?.cast?.slice(0, 8) || [];
-  const hasCredits = cast.length > 0;
 
   const backdrop = movieOrShow.backdrop_path
     ? `https://image.tmdb.org/t/p/original${movieOrShow.backdrop_path}`
@@ -154,44 +157,47 @@ function WatchContent({ movieOrShow, type, id, playPath, recommendations = [] })
     ? `https://image.tmdb.org/t/p/w400${movieOrShow.poster_path}`
     : '';
 
+  const seasons = movieOrShow.seasons?.filter((s) => s.season_number > 0) || [];
+  const currentSeasonData = seasons.find((s) => s.season_number === selectedSeason);
+  const totalEpisodes = currentSeasonData?.episode_count || 0;
+
   return (
-    <>
-      {/* Cinematic hero */}
-      <Box sx={{ position: 'relative', overflow: 'hidden', pt: { xs: 2, md: 6 } }}>
+    <Box sx={{ minHeight: '100vh', pb: 8 }}>
+      {/* Hero Header */}
+      <Box sx={{ position: 'relative', overflow: 'hidden', pt: { xs: 2, md: 6 }, pb: { xs: 4, md: 6 } }}>
         {backdrop && (
           <Box
             component="img"
             src={backdrop}
             alt=""
-            sx={{ position: 'absolute', inset: 0, width: 1, height: 1, objectFit: 'cover' }}
+            sx={{
+              position: 'absolute',
+              inset: 0,
+              width: 1,
+              height: 1,
+              objectFit: 'cover',
+              filter: 'brightness(0.35)',
+            }}
           />
         )}
         <Box
           sx={{
             position: 'absolute',
             inset: 0,
-            background: 'linear-gradient(180deg, rgba(5, 5, 5, 0.2) 0%, rgba(5, 5, 5, 0.95) 100%)',
-          }}
-        />
-        <Box
-          sx={{
-            position: 'absolute',
-            inset: 0,
-            background: 'linear-gradient(90deg, rgba(5, 5, 5, 0.9) 0%, rgba(5, 5, 5, 0.3) 55%, rgba(5, 5, 5, 0.1) 100%)',
+            background: 'linear-gradient(180deg, rgba(10,12,16,0.3) 0%, rgba(10,12,16,0.96) 100%)',
           }}
         />
 
-        <Container maxWidth="xl" sx={{ position: 'relative', py: { xs: 4, md: 8 } }}>
+        <Container maxWidth="xl" sx={{ position: 'relative' }}>
           <Button
             size="small"
             startIcon={<Iconify icon="solar:alt-arrow-left-bold" width={16} />}
             onClick={() => router.back()}
             sx={{
-              mb: { xs: 3, md: 5 },
+              mb: { xs: 2, md: 4 },
               color: 'common.white',
               bgcolor: alpha('#ffffff', 0.12),
               backdropFilter: 'blur(8px)',
-              WebkitBackdropFilter: 'blur(8px)',
               border: 'solid 1px',
               borderColor: alpha('#ffffff', 0.16),
               '&:hover': { bgcolor: alpha('#ffffff', 0.22) },
@@ -203,7 +209,6 @@ function WatchContent({ movieOrShow, type, id, playPath, recommendations = [] })
           </Button>
 
           <Stack
-            className="youplex-fade-up"
             direction={{ xs: 'column', sm: 'row' }}
             spacing={{ xs: 3, sm: 4, md: 5 }}
             alignItems={{ xs: 'center', sm: 'flex-start' }}
@@ -217,53 +222,53 @@ function WatchContent({ movieOrShow, type, id, playPath, recommendations = [] })
                   width: { xs: 180, sm: 220, md: 260 },
                   flexShrink: 0,
                   borderRadius: 3,
-                  bgcolor: 'common.black',
-                  boxShadow: `0 24px 48px -12px ${alpha('#000000', 0.7)}`,
-                  border: (theme) => `solid 1px ${alpha(theme.palette.common.white, 0.12)}`,
+                  boxShadow: `0 24px 48px -12px ${alpha('#000000', 0.8)}`,
+                  border: `solid 1px ${alpha(theme.palette.common.white, 0.15)}`,
                 }}
               />
             )}
 
-            <Stack spacing={2.5} sx={{ width: 1, minWidth: 0, color: 'common.white' }}>
-              <Stack direction="row" spacing={1}>
+            <Stack spacing={2} sx={{ width: 1, minWidth: 0, color: 'common.white' }}>
+              <Stack direction="row" spacing={1} flexWrap="wrap">
                 <Chip
                   size="small"
                   label={isTv ? 'TV Series' : 'Movie'}
-                  sx={{
-                    color: 'common.white',
-                    bgcolor: alpha('#ffffff', 0.12),
-                    '& .MuiChip-label': { color: 'common.white' },
-                    border: `solid 1px ${alpha('#ffffff', 0.16)}`,
-                    backdropFilter: 'blur(8px)',
-                    WebkitBackdropFilter: 'blur(8px)',
-                  }}
+                  color="primary"
+                  sx={{ fontWeight: 700 }}
                 />
+                {releaseYear && (
+                  <Chip
+                    size="small"
+                    label={releaseYear}
+                    sx={{
+                      bgcolor: alpha('#ffffff', 0.14),
+                      color: 'common.white',
+                      border: `1px solid ${alpha('#ffffff', 0.2)}`,
+                    }}
+                  />
+                )}
                 {movieOrShow.status && (
                   <Chip
                     size="small"
                     label={movieOrShow.status}
                     sx={{
-                      color: 'common.white',
                       bgcolor: alpha('#ffffff', 0.12),
-                      '& .MuiChip-label': { color: 'common.white' },
-                      border: `solid 1px ${alpha('#ffffff', 0.16)}`,
-                      backdropFilter: 'blur(8px)',
-                      WebkitBackdropFilter: 'blur(8px)',
+                      color: 'common.white',
                     }}
                   />
                 )}
               </Stack>
 
-              <Typography variant="h1" sx={{ fontSize: { xs: 40, sm: 56, md: 68 } }}>
+              <Typography variant="h2" sx={{ fontSize: { xs: 32, sm: 44, md: 54 }, fontWeight: 800 }}>
                 {displayTitle}
               </Typography>
 
-              <Stack direction="row" flexWrap="wrap" alignItems="center" spacing={{ xs: 1.5, sm: 2.5 }} useFlexGap>
+              <Stack direction="row" flexWrap="wrap" alignItems="center" spacing={2} useFlexGap>
                 {rating > 0 && (
                   <Stack direction="row" alignItems="center" spacing={0.6}>
                     <Iconify icon="eva:star-fill" width={20} sx={{ color: 'warning.main' }} />
-                    <Typography variant="subtitle2" sx={{ color: 'common.white' }}>
-                      {rating.toFixed(1)}
+                    <Typography variant="subtitle2" sx={{ color: 'common.white', fontWeight: 700 }}>
+                      {rating.toFixed(1)} / 10
                     </Typography>
                   </Stack>
                 )}
@@ -272,14 +277,17 @@ function WatchContent({ movieOrShow, type, id, playPath, recommendations = [] })
                 )}
                 {runtimeLabel && <MetaItem icon="solar:clock-circle-bold" label={runtimeLabel} />}
                 {isTv && movieOrShow.number_of_seasons > 0 && (
-                  <MetaItem icon="solar:layers-bold" label={`${movieOrShow.number_of_seasons} season${movieOrShow.number_of_seasons > 1 ? 's' : ''}`} />
+                  <MetaItem
+                    icon="solar:layers-bold"
+                    label={`${movieOrShow.number_of_seasons} season${movieOrShow.number_of_seasons > 1 ? 's' : ''}`}
+                  />
                 )}
               </Stack>
 
               {movieOrShow.overview && (
                 <Typography
                   variant="body1"
-                  sx={{ color: alpha('#ffffff', 0.78), lineHeight: 1.8, maxWidth: 720 }}
+                  sx={{ color: alpha('#ffffff', 0.8), lineHeight: 1.7, maxWidth: 800 }}
                 >
                   {movieOrShow.overview}
                 </Typography>
@@ -294,73 +302,160 @@ function WatchContent({ movieOrShow, type, id, playPath, recommendations = [] })
                       label={genre.name}
                       sx={{
                         color: alpha('#ffffff', 0.9),
-                        bgcolor: alpha('#ffffff', 0.1),
-                        border: `solid 1px ${alpha('#ffffff', 0.14)}`,
+                        bgcolor: alpha('#ffffff', 0.12),
                       }}
                     />
                   ))}
                 </Stack>
-              )}
-
-              {id && (
-                <Button
-                  size="large"
-                  variant="contained"
-                  startIcon={<Iconify icon="solar:play-bold" width={22} />}
-                  onClick={() => router.push(playPath)}
-                  sx={{ alignSelf: 'flex-start', mt: 1, borderRadius: 2, px: 4 }}
-                >
-                  Watch Now
-                </Button>
               )}
             </Stack>
           </Stack>
         </Container>
       </Box>
 
-      {/* Overview & cast */}
-      <Container maxWidth="xl" sx={{ pb: { xs: 6, md: 10 } }}>
-        <Stack spacing={5}>
-          {movieOrShow.overview && (
-            <Box>
-              <SectionHeading title="About" />
-              <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.9, maxWidth: 820 }}>
-                {movieOrShow.overview}
-              </Typography>
-            </Box>
+      {/* Main Content Area */}
+      <Container maxWidth="xl" sx={{ mt: 4 }}>
+        <Stack spacing={4}>
+          {/* TV Season & Episode Selector */}
+          {isTv && seasons.length > 0 && (
+            <Card sx={{ bgcolor: 'background.paper', borderRadius: 2.5, border: `1px solid ${theme.palette.divider}` }}>
+              <CardHeader
+                title={
+                  <Stack direction="row" alignItems="center" spacing={1}>
+                    <Iconify icon="solar:layers-bold" width={22} sx={{ color: 'primary.main' }} />
+                    <Typography variant="h6">Select Season & Episode</Typography>
+                  </Stack>
+                }
+                action={
+                  <TextField
+                    select
+                    size="small"
+                    value={selectedSeason}
+                    onChange={(e) => {
+                      setSelectedSeason(Number(e.target.value));
+                      setSelectedEpisode(1);
+                    }}
+                    sx={{ minWidth: 140 }}
+                  >
+                    {seasons.map((s) => (
+                      <MenuItem key={s.id} value={s.season_number}>
+                        Season {s.season_number}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                }
+                sx={{ pb: 1 }}
+              />
+              <CardContent>
+                <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 1.5 }}>
+                  Choose episode to filter available torrents:
+                </Typography>
+                <Box
+                  display="grid"
+                  gap={1}
+                  gridTemplateColumns={{
+                    xs: 'repeat(4, 1fr)',
+                    sm: 'repeat(6, 1fr)',
+                    md: 'repeat(8, 1fr)',
+                    lg: 'repeat(12, 1fr)',
+                  }}
+                >
+                  {[...Array(totalEpisodes)].map((_, index) => {
+                    const epNum = index + 1;
+                    const isSelected = epNum === selectedEpisode;
+                    return (
+                      <Button
+                        key={epNum}
+                        variant={isSelected ? 'contained' : 'outlined'}
+                        color={isSelected ? 'primary' : 'inherit'}
+                        onClick={() => setSelectedEpisode(epNum)}
+                        sx={{
+                          minWidth: 0,
+                          py: 0.75,
+                          fontSize: '0.8rem',
+                          fontWeight: isSelected ? 700 : 500,
+                        }}
+                      >
+                        EP {epNum}
+                      </Button>
+                    );
+                  })}
+                </Box>
+              </CardContent>
+            </Card>
           )}
 
-          {hasCredits && (
+          {/* Torrents Table Section */}
+          <Box>
+            <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1.5 }}>
+              <Stack direction="row" alignItems="center" spacing={1}>
+                <Iconify icon="solar:magnet-bold" width={26} sx={{ color: 'primary.main' }} />
+                <Typography variant="h5" fontWeight={700}>
+                  {isTv
+                    ? `Torrents for S${String(selectedSeason).padStart(2, '0')}E${String(selectedEpisode).padStart(2, '0')}`
+                    : `Torrents for ${displayTitle}`}
+                </Typography>
+              </Stack>
+
+              <Button
+                size="small"
+                variant="soft"
+                color="inherit"
+                startIcon={<Iconify icon="solar:refresh-bold" width={16} />}
+                onClick={() => fetchJackettTorrents(customQuery || displayTitle)}
+                disabled={torrentsLoading}
+              >
+                Refresh
+              </Button>
+            </Stack>
+
+            <TorrentTable
+              torrents={torrents}
+              title={
+                isTv
+                  ? `${displayTitle} S${String(selectedSeason).padStart(2, '0')}E${String(selectedEpisode).padStart(2, '0')}`
+                  : displayTitle
+              }
+              isLoading={torrentsLoading}
+              error={torrentsError}
+            />
+          </Box>
+
+          {/* Cast Section */}
+          {cast.length > 0 && (
             <Box>
-              <SectionHeading title="Top Cast" />
+              <Typography variant="h5" sx={{ mb: 2, fontWeight: 700 }}>
+                Top Cast
+              </Typography>
               <Stack direction="row" flexWrap="wrap" spacing={2} useFlexGap>
                 {cast.map((actor) => (
                   <Stack
                     key={actor.id}
                     alignItems="center"
                     spacing={1}
-                    sx={{ width: 120, textAlign: 'center' }}
+                    sx={{ width: 110, textAlign: 'center' }}
                   >
                     <Box
                       component="img"
                       src={
                         actor.profile_path
                           ? `https://image.tmdb.org/t/p/w185${actor.profile_path}`
-                          : ''
+                          : '/assets/placeholder.jpg'
                       }
                       alt={actor.name}
                       sx={{
-                        width: 96,
-                        height: 96,
+                        width: 80,
+                        height: 80,
                         borderRadius: '50%',
                         objectFit: 'cover',
-                        bgcolor: (theme) => theme.palette.background.neutral,
-                        border: (theme) => `solid 1px ${theme.palette.divider}`,
+                        border: `solid 1px ${theme.palette.divider}`,
                       }}
                     />
                     <Stack>
-                      <Typography variant="subtitle2">{actor.name}</Typography>
-                      <Typography variant="caption" sx={{ color: 'text.disabled' }}>
+                      <Typography variant="subtitle2" sx={{ fontSize: '0.8rem', lineHeight: 1.2 }}>
+                        {actor.name}
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: 'text.disabled', fontSize: '0.72rem' }}>
                         {actor.character}
                       </Typography>
                     </Stack>
@@ -369,34 +464,34 @@ function WatchContent({ movieOrShow, type, id, playPath, recommendations = [] })
               </Stack>
             </Box>
           )}
+
+          {/* Recommendations */}
+          {recommendations.length > 0 && (
+            <Box sx={{ pt: 2 }}>
+              <Typography variant="h5" sx={{ mb: 2.5, fontWeight: 700 }}>
+                You May Also Like
+              </Typography>
+              <Box
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: {
+                    xs: 'repeat(2, 1fr)',
+                    sm: 'repeat(3, 1fr)',
+                    md: 'repeat(4, 1fr)',
+                    lg: 'repeat(6, 1fr)',
+                  },
+                  gap: 2,
+                }}
+              >
+                {recommendations.slice(0, 12).map((post, index) => (
+                  <PostItem key={post.id} post={post} index={index} />
+                ))}
+              </Box>
+            </Box>
+          )}
         </Stack>
       </Container>
-
-      {/* Recommended */}
-      {recommendations.length > 0 && (
-        <Box sx={{ pb: { xs: 6, md: 10 }, bgcolor: 'background.neutral' }}>
-          <Container maxWidth="xl" sx={{ pt: { xs: 4, md: 6 } }}>
-            <SectionHeading title="Recommended" />
-            <Box
-              sx={{
-                display: 'grid',
-                gridTemplateColumns: {
-                  xs: 'repeat(2, 1fr)',
-                  sm: 'repeat(3, 1fr)',
-                  md: 'repeat(4, 1fr)',
-                  lg: 'repeat(6, 1fr)',
-                },
-                gap: 2,
-              }}
-            >
-              {recommendations.slice(0, 12).map((post, index) => (
-                <PostItem key={post.id} post={post} index={index} />
-              ))}
-            </Box>
-          </Container>
-        </Box>
-      )}
-    </>
+    </Box>
   );
 }
 
@@ -413,13 +508,38 @@ function MetaItem({ icon, label }) {
   );
 }
 
-// ----------------------------------------------------------------------
-
-function SectionHeading({ title }) {
+function DetailSkeleton() {
   return (
-    <Stack direction="row" alignItems="center" spacing={1.5} sx={{ mb: 2 }}>
-      <Box sx={{ width: 28, height: 4, borderRadius: 1, bgcolor: 'primary.main' }} />
-      <Typography variant="h5">{title}</Typography>
-    </Stack>
+    <Container maxWidth="xl" sx={{ py: 6 }}>
+      <Stack spacing={4}>
+        <Stack direction="row" spacing={3}>
+          <Skeleton variant="rounded" sx={{ width: 240, height: 360, display: { xs: 'none', sm: 'block' } }} />
+          <Stack spacing={2} sx={{ width: 1 }}>
+            <Skeleton width="40%" height={32} />
+            <Skeleton width="75%" height={60} />
+            <Skeleton width="50%" height={24} />
+            <Skeleton width="90%" height={80} />
+          </Stack>
+        </Stack>
+        <Skeleton variant="rounded" sx={{ width: 1, height: 300 }} />
+      </Stack>
+    </Container>
+  );
+}
+
+function DetailError({ error }) {
+  return (
+    <Container sx={{ py: 12, textAlign: 'center' }}>
+      <Stack alignItems="center" spacing={2} sx={{ maxWidth: 400, mx: 'auto' }}>
+        <Iconify icon="solar:shield-warning-bold" width={56} sx={{ color: 'error.main' }} />
+        <Typography variant="h5">Could not load title</Typography>
+        <Typography variant="body2" color="text.secondary">
+          {error || 'The requested title could not be loaded.'}
+        </Typography>
+        <Button variant="contained" onClick={() => window.location.reload()}>
+          Try Again
+        </Button>
+      </Stack>
+    </Container>
   );
 }

@@ -124,8 +124,8 @@ function HeroBannerItem({ item, isActive }) {
     ? `https://image.tmdb.org/t/p/original${item.backdrop_path}`
     : '/fallback-backdrop.jpg';
 
-  const handleWatch = () => {
-    router.push(paths.watch.details(type, item.id));
+  const handleTorrents = () => {
+    router.push(paths.watch.details(type, item.id, title));
   };
 
   return (
@@ -286,7 +286,7 @@ function HeroBannerItem({ item, isActive }) {
                 <Button
                   variant="contained"
                   className="youplex-shimmer"
-                  onClick={handleWatch}
+                  onClick={handleTorrents}
                   sx={{
                     px: 3.5,
                     py: 1.05,
@@ -301,8 +301,8 @@ function HeroBannerItem({ item, isActive }) {
                     },
                   }}
                 >
-                  <Iconify icon="solar:play-bold" width={18} sx={{ mr: 0.75 }} />
-                  Play Now
+                  <Iconify icon="solar:download-square-bold" width={20} sx={{ mr: 0.75 }} />
+                  Get Torrents
                 </Button>
               </m.div>
 
@@ -310,7 +310,7 @@ function HeroBannerItem({ item, isActive }) {
                 <Button
                   variant="soft"
                   color="inherit"
-                  onClick={handleWatch}
+                  onClick={handleTorrents}
                   sx={{
                     px: 3.5,
                     py: 1.05,
@@ -328,7 +328,7 @@ function HeroBannerItem({ item, isActive }) {
                     },
                   }}
                 >
-                  More Info
+                  Details
                 </Button>
               </m.div>
             </Stack>

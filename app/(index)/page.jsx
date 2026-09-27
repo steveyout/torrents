@@ -5,12 +5,29 @@ import { getMovies, getTvShows, getTrending } from '@/actions/api';
 // ----------------------------------------------------------------------
 
 export const metadata = {
-  title: `Explore Movies & TV Shows - ${CONFIG.site.name} -Yflix,pstream alternative`,
-  description: `Browse the latest trending movies, top-rated TV shows, and upcoming releases on ${CONFIG.site.name}. Stream your favorite content in high quality.Better than flixhq,pstream and yflix`,
-  keywords: 'streaming, movies, tv shows, online cinema, trending movies, vidsrc, youplex,flixhq,yflix,pstream',
+  title: `Youplex - The Best Torrent Search Engine (The Pirate Bay, 1337x, YTS, LimeTorrents)`,
+  description: `Search verified torrents & magnet links across The Pirate Bay, 1337x, YTS, LimeTorrents, TorrentGalaxy, EZTV, and FitGirl. 4K/1080p Movies, TV Series, PC Games, Lossless Music, Audiobooks, and Books.`,
+  keywords: [
+    'The Pirate Bay',
+    '1337x',
+    'YTS',
+    'YIFY',
+    'LimeTorrents',
+    'TorrentGalaxy',
+    'EZTV',
+    'RARBG',
+    'FitGirl Repacks',
+    'DODI Repacks',
+    'Torrents search',
+    'Magnet links',
+    'Movies torrents',
+    'TV series torrents',
+    'PC games torrents',
+    'FLAC music torrents',
+  ],
   openGraph: {
-    title: `Explore Movies & TV Shows - ${CONFIG.site.name}`,
-    description: `Discover the best of entertainment on ${CONFIG.site.name}.`,
+    title: `Youplex - Torrents Search & Magnet Hub`,
+    description: `Discover and download verified torrents across The Pirate Bay, 1337x, YTS, LimeTorrents, and TorrentGalaxy on ${CONFIG.site.name}.`,
     type: 'website',
   },
 };

@@ -1,4 +1,4 @@
-import { paper } from '@/theme/styles';
+import { paper, varAlpha } from '@/theme/styles';
 import { usePathname } from '@/routes/hooks';
 import { NavLi, NavUl } from '@/components/nav-section';
 import { useActiveLink } from '@/routes/hooks/use-active-link';
@@ -94,13 +94,13 @@ export function NavList({ data }) {
                 onMouseEnter={handleOpenMenu}
                 onMouseLeave={handleCloseMenu}
                 sx={{
-                  pt: 0.5,
+                  pt: 1,
                   left: 0,
                   right: 0,
                   mx: 'auto',
                   position: 'fixed',
                   zIndex: theme.zIndex.modal,
-                  maxWidth: theme.breakpoints.values.lg,
+                  maxWidth: 580,
                   top: Math.round(clientRect.top + clientRect.height),
                 }}
               >
@@ -108,16 +108,23 @@ export function NavList({ data }) {
                   component="nav"
                   sx={{
                     ...paper({ theme, dropdown: true }),
-                    borderRadius: 2,
-                    p: theme.spacing(5, 1, 1, 4),
+                    borderRadius: 2.5,
+                    p: theme.spacing(3, 3.5, 3, 3.5),
+                    backdropFilter: 'blur(24px)',
+                    border: (theme) => `1px solid ${varAlpha(theme.vars.palette.divider, 0.12)}`,
+                    boxShadow: (theme) =>
+                      `0 24px 48px -12px rgba(0, 0, 0, 0.6), 0 0 0 1px ${varAlpha(
+                        theme.vars.palette.primary.mainChannel,
+                        0.1
+                      )}`,
                   }}
                 >
                   <NavUl
                     sx={{
                       gap: 3,
                       width: 1,
-                      flexWrap: 'wrap',
-                      flexDirection: 'row',
+                      display: 'grid',
+                      gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' },
                     }}
                   >
                     {data.children.map((list) => (
@@ -158,11 +165,19 @@ function NavSubList({ data, subheader, sx, ...other }) {
       }}
       {...other}
     >
-      <NavUl>
+      <NavUl sx={{ width: 1 }}>
         <ListSubheader
           disableSticky
           disableGutters
-          sx={{ fontSize: 11, color: 'text.primary', typography: 'overline' }}
+          sx={{
+            fontSize: 11,
+            color: 'primary.main',
+            fontWeight: 800,
+            letterSpacing: 1.1,
+            typography: 'overline',
+            px: 0,
+            mb: 0.5,
+          }}
         >
           {subheader}
         </ListSubheader>
@@ -173,12 +188,12 @@ function NavSubList({ data, subheader, sx, ...other }) {
               <NavItemDashboard path={item.path} />
             </NavLi>
           ) : (
-            <NavLi key={item.title} sx={{ mt: 1.5 }}>
+            <NavLi key={item.title} sx={{ mt: 1 }}>
               <NavItem
                 subItem
                 title={item.title}
                 path={item.path}
-                active={item.path === removeLastSlash(pathname)}
+                active={item.path === pathname || (item.path !== '/' && pathname.startsWith(item.path))}
               />
             </NavLi>
           )

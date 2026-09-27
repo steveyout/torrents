@@ -1,143 +1,101 @@
-# 🎬 Youplex
+# Torrents App (Formerly Youplex)
 
-Youplex is a high-performance, SEO-optimized streaming discovery platform built with **Next.js 15** and **TMDB API**. Designed for speed and reliability, it features a full **PWA** experience, dynamic sitemaps, and multi-server provider integration.
+A Next.js PWA application for streaming movies, TV shows and downloading torrents via Jackett API.
 
-![Next.js](https://img.shields.io/badge/Next.js-15-black?style=for-the-badge&logo=next.js)
-![MUI](https://img.shields.io/badge/Material--UI-v6-blue?style=for-the-badge&logo=mui)
-![PWA](https://img.shields.io/badge/PWA-Ready-orange?style=for-the-badge&logo=pwa)
-![PM2](https://img.shields.io/badge/PM2-Managed-green?style=for-the-badge&logo=pm2)
+## Features
 
----
+- **TMDB Integration**: Latest movies/shows from The Movie Database API
+- **Jackett Torrent Searches**: Fetch torrents from 2 healthy indexers per query for speed
+- **Category Filtering**: Movies, TV Shows, Games, Music sections with filters
+- **Responsive Torrent Table**: Clean display of magnet links, seeders, size, health status
+- **PWA Support**: Installable app on mobile devices
 
----
-
-## 📈 Project Growth
-
-### Star History
-[![Star History Chart](https://api.star-history.com/svg?repos=steveyout/youplex&theme=dark)](https://star-history.com/#steveyout/youplex&Date)
-
-### Repository Metrics
-![GitHub Repo stars](https://img.shields.io/github/stars/steveyout/youplex?style=for-the-badge&color=yellow)
-![GitHub forks](https://img.shields.io/github/forks/steveyout/youplex?style=for-the-badge&color=blue)
-![GitHub contributors](https://img.shields.io/github/contributors/steveyout/youplex?style=for-the-badge&color=green)
-![GitHub last commit](https://img.shields.io/github/last-commit/steveyout/youplex?style=for-the-badge)
-
----
-
-## ✨ Features
-
-- 🚀 **Next.js 15 & Turbopack:** Blazing fast development and optimized production builds.
-- 📱 **PWA Ready:** Installable on iOS and Android with a standalone native-app feel.
-- 🔍 **Advanced Search:** Real-time multi-search for Movies and TV Series with poster previews and keyboard shortcuts (⌘K).
-- 📺 **Multi-Server Support:** Integrated server switcher with support for VidLink Pro, VidSrc VIP, RiveStream, VidNest, and more.
-- 🛠 **SEO Optimized:** Dynamic `sitemap.xml` and `robots.txt` generation using `force-dynamic` rendering to ensure Google always sees fresh content.
-- 🌑 **Modern UI:** Built with Material UI (MUI) featuring a responsive, mobile-first design and professional accordion-based FAQs.
-
----
-
-## 🛠 Tech Stack
-
-- **Framework:** Next.js 15 (App Router)
-- **Engine:** Turbopack
-- **Styling:** Material UI (MUI) v6 & Emotion
-- **Icons:** Iconify (Eva, Solar, Lucide sets)
-- **Data Source:** TMDB API
-- **Process Manager:** PM2
-- **Package Manager:** Yarn
-
----
-
-## 🚀 Getting Started
-
-### Prerequisites
-
-- Node.js 18.x or higher
-- Yarn package manager
-- TMDB API Key
-
-### Installation
-
-1. **Clone the repository:**
-   ```bash
-   git clone [https://github.com/steveyout/youplex.git](https://github.com/steveyout/youplex.git)
-   cd youplex
-   ```
-## Install dependencies:
+## Setup Instructions
 
 ```bash
+# 1. Clone the repository
+cd torrents
+
+# 2. Install dependencies
 yarn install
-Environment Variables: Create a .env.local file in the root and add your keys:
 
+# 3. Set up environment variables
+cp .env.example .env.local
+# Edit .env.local with your:
+# - TMDB_API_KEY (free from https://www.themoviedb.org/)
+# - Jackett_API_URL (your Jackett instance)
+# - Jackett_API_KEY
 
+# 4. Start development server
+yarn dev
+```
+
+## Environment Variables
+
+Create `.env.local` with:
+
+```env
+NEXT_PUBLIC_TMDB_BASE_URL=https://api.themoviedb.org/3
+NEXT_PUBLIC_TMDB_TOKEN=your_tmdb_read_token_here
 NEXT_PUBLIC_TMDB_API_KEY=your_tmdb_api_key_here
-NEXT_PUBLIC_SITE_URL=[https://youplex.vercel.app](https://youplex.vercel.app)
-Development: Run the development server with Turbopack:
-
-
-yarn dev --turbo
+NEXT_PUBLIC_JACKETT_API_URL=https://jackett.youplex.site
+NEXT_PUBLIC_JACKETT_API_KEY=your_jwt_token
+APP_NAME=TorrentsApp
 ```
 
-## 🏗 Production Deployment (PM2)
-# To run Youplex in a production environment (VPS/Dedicated Server):
+## Running
 
-Build the project:
+Development: `yarn dev`
+Build & Start: `yarn build && yarn start`
 
-```bash
-yarn build
-Start the process with PM2:
-
-
-pm2 start yarn --name "youplex" -- start
-Ensure Persistence:
-
-
-pm2 startup
-pm2 save
+## Project Structure
 
 ```
-## 📁 Project Structure
+app/
+  (index)/      # Homepage with TMDB latest content
+  downloads/    # Torrent download page
+  games/        # Games section (coming soon)
+  music/        # Music albums (coming soon)
+  search/       # Search page with filtering
+  torrents/     # Dedicated torrent search view
+  watch/
+    [type]/[title]/  # Media detail pages
+    torrent/      # Torrent details per title
 
-```text
-├── app/                          # Next.js App Router
-│   ├── favicon/                  # PWA and browser icons
-│   ├── layout.js                 # Root layout with SEO & PWA metadata
-│   ├── loading.js                # Global streaming/loading states
-│   ├── manifest.js               # Dynamic PWA Web Manifest
-│   ├── robots.js                 # Search engine bot instructions
-│   ├── sitemap.js                # Dynamic SEO sitemap (force-dynamic)
-│   └── watch/                    # Streaming & Player routes
-├── components/                   # Core UI Components
-│   ├── iconify/                  # Iconify integration (eva, solar, etc.)
-│   ├── logo/                     # Brand components
-│   └── search/                   # Search logic and multi-results
-├── config/                       # Global Configuration
-│   ├── config-global.js          # Site name, URL, and API constants
-│   └── providers.js              # Video server provider definitions
-├── hooks/                        # Custom React Hooks
-│   ├── use-boolean.js            # Toggle/Modal state management
-│   └── use-debounce.js           # Search input optimization
-├── routes/                       # Navigation Pathing
-│   ├── hooks/                    # Router navigation helpers
-│   └── paths.js                  # Centralized URL definitions
-├── sections/                     # Page-Specific Features
-│   ├── faqs/                     # FAQ list and accordion content
-│   ├── player/                   # Video player and provider stack
-│   └── search/                   # Search bar and keyboard shortcuts
-├── theme/                        # MUI Theme System
-│   ├── core/                     # Palette, typography, and shadows
-│   └── custom-shadows.js         # Custom design tokens
-├── public/                       # Static Assets
-└── next.config.mjs               # Turbopack & PWA configuration
+api/
+  scrape/        # Stream scraping
+  subtitles/      # Subtitle scraping
+  torrents/      # Jackett torrent API
+
+actions/
+  api.ts         # TMDB actions
+  jackett-api.ts # Jackett torrent search actions
+
+components/
+  torrents/
+    torrent-table.jsx  # Responsive torrent display
+
+sections/
+  featured/
+    home-view.tsx     # Homepage with categories
 ```
 
-## 💬 Community & Support
-Join our community to get updates, report bugs, or request new features:
+## Torrent Table Features
 
-📢 Telegram: Telegram channel [Telegram](https://t.me/youplexannouncments)
+- Shows magnet links
+- Seeder counts (filter: healthy, seeding, low)
+- File size in human-readable format
+- Health status indicators
+- Copy to clipboard functionality
+- Responsive table layout
 
-💬 Discord: Join our [Discord](https://discord.gg/5eWu9Vz6tQ)
+## API Filtering
 
-## 🛡 License
-Distributed under the MIT License.
+The app automatically filters through Jackett indexes and only fetches from:
+- Type = "scrape" 
+- Status != "slow" or "dead"
+- Only 2 best scrapers per query for speed
 
-Disclaimer: Youplex does not host any files on its servers. All content is provided by non-affiliated third-party providers.
+## License
+
+MIT - You're free to use this for your own torrent streaming projects.

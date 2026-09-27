@@ -20,9 +20,7 @@ import { navData as mainNavData } from '../config-nav-main';
 export function MainLayout({ sx, data, children }) {
   const theme = useTheme();
 
-
   const mobileNavOpen = useBoolean();
-
 
   const layoutQuery = 'md';
 
@@ -47,9 +45,10 @@ export function MainLayout({ sx, data, children }) {
             slotsDisplay={{
               helpLink: false,
               searchbar: true,
-              localization: true,
-              notifications: true,
-              signIn :false,
+              localization: false,
+              notifications: false,
+              settings: true,
+              signIn: false,
             }}
             slots={{
               topArea: (

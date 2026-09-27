@@ -1,11 +1,13 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { paths } from '@/routes/paths';
 import { useRouter } from '@/routes/hooks';
 import { fDate } from '@/utils/format-time';
 import { Iconify } from '@/components/iconify';
 import { RouterLink } from '@/routes/components';
 import { CustomBreadcrumbs } from '@/components/custom-breadcrumbs';
+import { TorrentTable } from '@/components/torrents';
 
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
@@ -17,13 +19,12 @@ import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
 import Container from '@mui/material/Container';
 import Grid from '@mui/material/Unstable_Grid2';
-import { useTheme } from '@mui/material/styles';
+import { useTheme, alpha } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
 import CardHeader from '@mui/material/CardHeader';
 import CardContent from '@mui/material/CardContent';
 
 import { PostItem } from '../post-item';
-import VideoPlayer from '../VideoPlayer';
 
 // ----------------------------------------------------------------------
 
@@ -41,31 +42,61 @@ export function PostDetailsHomeView({ post, latestPosts, videoParams }) {
   const currentSeasonData = post?.seasons?.find((s) => s.season_number === videoParams.season);
   const totalEpisodes = currentSeasonData?.episode_count || 0;
 
+  // Torrents fetching
+  const [torrents, setTorrents] = useState([]);
+  const [torrentsLoading, setTorrentsLoading] = useState(true);
+  const [torrentsError, setTorrentsError] = useState(null);
+
+  useEffect(() => {
+    if (!displayTitle) return;
+
+    let active = true;
+    setTorrentsLoading(true);
+    setTorrentsError(null);
+
+    const params = new URLSearchParams({
+      q: displayTitle,
+      category: isTv ? 'tv' : 'movies',
+    });
+
+    if (isTv) {
+      params.set('season', String(videoParams.season || 1));
+      params.set('ep', String(videoParams.episode || 1));
+    } else {
+      const year = post?.release_date ? new Date(post.release_date).getFullYear() : '';
+      if (year) params.set('year', String(year));
+    }
+
+    fetch(`/api/torrents?${params.toString()}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (active) setTorrents(data.torrents || []);
+      })
+      .catch((err) => {
+        if (active) setTorrentsError(err.message);
+      })
+      .finally(() => {
+        if (active) setTorrentsLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [displayTitle, isTv, videoParams.season, videoParams.episode, post?.release_date]);
+
   const handleSeasonChange = (event) => {
     const newSeason = event.target.value;
-    // When changing seasons, we default back to episode 1
     const path = paths.watch.details(videoParams.type, videoParams.id, displayTitle, newSeason, 1);
     router.push(path);
   };
 
   return (
     <>
-      <Box sx={{ bgcolor: 'common.black', py: { xs: 2, md: 5 } }}>
-        <Container maxWidth="xl">
-          <VideoPlayer
-            tmdbId={videoParams.id}
-            type={videoParams.type}
-            season={videoParams.season}
-            episode={videoParams.episode}
-          />
-        </Container>
-      </Box>
-
-      <Container maxWidth="lg" sx={{ mt: 5 }}>
+      <Container maxWidth="lg" sx={{ mt: 3 }}>
         <CustomBreadcrumbs
           links={[
             { name: 'Home', href: '/' },
-            { name: isTv ? 'TV Series' : 'Movies', href: '#' },
+            { name: isTv ? 'TV Series' : 'Movies', href: isTv ? '/tv' : '/movies' },
             { name: displayTitle },
           ]}
           sx={{ mb: 3 }}
@@ -89,7 +120,7 @@ export function PostDetailsHomeView({ post, latestPosts, videoParams }) {
                 )}
               </Stack>
 
-              {/* Enhanced Season & Episode Selector */}
+              {/* Season & Episode Selector */}
               {isTv && seasons.length > 0 && (
                 <Card sx={{ bgcolor: 'background.neutral', border: `1px solid ${theme.palette.divider}` }}>
                   <CardHeader
@@ -150,6 +181,23 @@ export function PostDetailsHomeView({ post, latestPosts, videoParams }) {
                   </CardContent>
                 </Card>
               )}
+
+              {/* Torrent Table */}
+              <Box sx={{ mt: 2 }}>
+                <Typography variant="h5" sx={{ mb: 1.5, fontWeight: 700 }}>
+                  Available Torrents
+                </Typography>
+                <TorrentTable
+                  torrents={torrents}
+                  title={
+                    isTv
+                      ? `${displayTitle} S${String(videoParams.season).padStart(2, '0')}E${String(videoParams.episode).padStart(2, '0')}`
+                      : displayTitle
+                  }
+                  isLoading={torrentsLoading}
+                  error={torrentsError}
+                />
+              </Box>
 
               <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.8 }}>
                 {post?.overview}

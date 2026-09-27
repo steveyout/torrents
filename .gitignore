@@ -38,6 +38,8 @@ build
 tsconfig.tsbuildinfo
 .aider*
 .qwen*
+.pi
+.pi/
 modelfile
 Modelfile
 

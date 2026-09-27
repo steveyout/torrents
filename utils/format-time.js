@@ -100,6 +100,24 @@ export function fToNow(date) {
 
 // ----------------------------------------------------------------------
 
+/** output: 2 years ago, 3 days ago, or Recent
+ */
+export function fAge(date, withoutSuffix = false) {
+  if (!date) {
+    return 'Recent';
+  }
+
+  const isValid = dayjs(date).isValid();
+
+  if (!isValid) {
+    return 'Recent';
+  }
+
+  return withoutSuffix ? dayjs(date).toNow(true) : dayjs(date).fromNow();
+}
+
+// ----------------------------------------------------------------------
+
 /** output: boolean
  */
 export function fIsBetween(inputDate, startDate, endDate) {

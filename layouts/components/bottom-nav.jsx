@@ -20,23 +20,7 @@ const NAV_ITEMS = [
   { key: 'search', title: 'Search', path: paths.search, icon: 'solar:magnifer-bold-duotone', activeIcon: 'solar:magnifer-bold' },
   { key: 'movies', title: 'Movies', path: paths.movies, icon: 'solar:clapperboard-bold-duotone', activeIcon: 'solar:clapperboard-bold' },
   { key: 'tv', title: 'Shows', path: paths.tv, icon: 'solar:tv-bold-duotone', activeIcon: 'solar:tv-bold' },
-  { key: 'live-tv', title: 'Live', path: paths.liveTv, icon: 'solar:radio-bold-duotone', activeIcon: 'solar:radio-bold' },
-  {
-    key: 'torrents',
-    title: 'Torrents',
-    path: paths.torrents,
-    icon: 'solar:download-square-bold-duotone',
-    activeIcon: 'solar:download-square-bold',
-    external: true,
-  },
-  {
-    key: 'discord',
-    title: 'Discord',
-    path: paths.discord,
-    icon: 'ic:baseline-discord',
-    activeIcon: 'ic:baseline-discord',
-    external: true,
-  },
+  { key: 'games', title: 'Games', path: paths.games, icon: 'solar:gamepad-bold-duotone', activeIcon: 'solar:gamepad-bold' },
 ];
 
 // ----------------------------------------------------------------------
@@ -100,10 +84,8 @@ export function BottomNav({ sx }) {
             return (
               <Box
                 key={item.key}
-                component={item.external ? 'a' : RouterLink}
+                component={RouterLink}
                 href={item.path}
-                target={item.external ? '_blank' : undefined}
-                rel={item.external ? 'noopener noreferrer' : undefined}
                 sx={{ textDecoration: 'none', color: 'inherit', outline: 'none' }}
               >
                 <m.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.92 }}>
@@ -113,10 +95,10 @@ export function BottomNav({ sx }) {
                     spacing={0.3}
                     sx={{
                       position: 'relative',
-                      minWidth: { xs: 42, sm: 58 },
+                      minWidth: { xs: 52, sm: 64 },
                       flexShrink: 0,
                       py: 0.75,
-                      px: { xs: 0.25, sm: 0.5 },
+                      px: { xs: 0.5, sm: 1 },
                       borderRadius: 999,
                       color: active ? 'primary.main' : 'text.secondary',
                       transition: theme.transitions.create(['color'], {
@@ -178,8 +160,6 @@ export function BottomNav({ sx }) {
 // ----------------------------------------------------------------------
 
 function isItemActive(pathname, item) {
-  if (item.external) return false;
-
   if (item.key === 'home') {
     return pathname === '/';
   }
@@ -198,8 +178,8 @@ function isItemActive(pathname, item) {
     return pathname === '/tv' || pathname.startsWith('/tv/');
   }
 
-  if (item.key === 'live-tv') {
-    return pathname === '/live-tv' || pathname.startsWith('/live-tv/');
+  if (item.key === 'games') {
+    return pathname === '/games' || pathname.startsWith('/games');
   }
 
   return false;

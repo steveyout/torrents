@@ -5,12 +5,12 @@ import { PostListHomeView } from '@/sections/movies/view';
 // ----------------------------------------------------------------------
 
 export const metadata = {
-  title: `Watch Movies Online - ${CONFIG.site.name}`,
-  description: `Stream the latest movies, top-rated cinema classics, and upcoming releases on ${CONFIG.site.name}. High-quality streaming for all your favorite films.`,
-  keywords: 'watch movies, stream cinema, popular movies, action movies, new movie releases',
+  title: `Movie Torrents - ${CONFIG.site.name}`,
+  description: `Find and download the latest movie torrents, top-rated cinema releases, and 4K/1080p torrents on ${CONFIG.site.name}.`,
+  keywords: 'movie torrents, download movies, 4k movies, 1080p bluray torrents, yts, pirate bay',
   openGraph: {
-    title: `Explore the Best Movies - ${CONFIG.site.name}`,
-    description: `Browse our massive library of movies on ${CONFIG.site.name}.`,
+    title: `Explore Movie Torrents - ${CONFIG.site.name}`,
+    description: `Browse verified movie torrents on ${CONFIG.site.name}.`,
     type: 'website',
   },
 };
