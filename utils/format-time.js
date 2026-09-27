@@ -2,6 +2,15 @@ import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
 import relativeTime from 'dayjs/plugin/relativeTime';
 
+function normalizeFormat(format, defaultFormat) {
+  if (!format) return defaultFormat;
+  return format
+    .replace(/yyyy/g, 'YYYY')
+    .replace(/yy/g, 'YY')
+    .replace(/\bdd\b/g, 'DD')
+    .replace(/\bd\b/g, 'D');
+}
+
 // ----------------------------------------------------------------------
 
 dayjs.extend(duration);
@@ -39,7 +48,7 @@ export function fDateTime(date, format) {
 
   const isValid = dayjs(date).isValid();
 
-  return isValid ? dayjs(date).format(format ?? formatStr.dateTime) : 'Invalid time value';
+  return isValid ? dayjs(date).format(normalizeFormat(format, formatStr.dateTime)) : 'Invalid time value';
 }
 
 // ----------------------------------------------------------------------
@@ -53,7 +62,7 @@ export function fDate(date, format) {
 
   const isValid = dayjs(date).isValid();
 
-  return isValid ? dayjs(date).format(format ?? formatStr.date) : 'Invalid time value';
+  return isValid ? dayjs(date).format(normalizeFormat(format, formatStr.date)) : 'Invalid time value';
 }
 
 // ----------------------------------------------------------------------

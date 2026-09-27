@@ -5,6 +5,7 @@ import { Label } from '@/components/label';
 import { Iconify } from '@/components/iconify';
 import { RouterLink } from '@/routes/components';
 import { maxLine, varAlpha } from '@/theme/styles';
+import { fDate } from '@/utils/format-time';
 
 import Card from '@mui/material/Card';
 import { useTheme } from '@mui/material/styles';
@@ -230,6 +231,12 @@ export default function MovieCard({ movie, index = 0 }) {
                 {type === 'tv' ? 'Series' : 'Movie'}
               </Box>
             </Stack>
+
+            {displayDate && (
+              <Box component="span" sx={{ fontSize: '0.72rem', color: 'text.disabled' }}>
+                {fDate(displayDate, 'MMM YYYY')}
+              </Box>
+            )}
           </Stack>
         </CardContent>
       </Card>

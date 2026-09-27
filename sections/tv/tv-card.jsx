@@ -22,6 +22,8 @@ export function TvCard({ post, rowIndex, colIndex }) {
   const isFocused = focusRow === rowIndex && focusCol === colIndex;
 
   const displayTitle = post.title || post.name || 'Untitled';
+  const displayDate = post.first_air_date || post.release_date;
+  const releaseYear = displayDate ? new Date(displayDate).getFullYear() : null;
   const type = post.media_type || (post.release_date ? 'movie' : 'tv');
   const linkTo = paths.watch.details(type, post.id, displayTitle);
 
@@ -98,6 +100,20 @@ export function TvCard({ post, rowIndex, colIndex }) {
       >
         {displayTitle}
       </Typography>
+
+      {releaseYear && (
+        <Typography
+          variant="caption"
+          sx={{
+            px: 0.5,
+            color: isFocused ? 'common.white' : 'text.disabled',
+            fontSize: '0.75rem',
+            display: 'block',
+          }}
+        >
+          {releaseYear}
+        </Typography>
+      )}
     </Box>
   );
 }

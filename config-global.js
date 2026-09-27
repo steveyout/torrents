@@ -10,5 +10,6 @@ export const CONFIG = {
     basePath: process.env.NEXT_PUBLIC_BASE_PATH ?? '',
     version: packageJson.version,
   },
+  assetsDir: process.env.NEXT_PUBLIC_BASE_PATH ?? '',
   isStaticExport: JSON.parse(`${process.env.BUILD_STATIC_EXPORT}`),
 };

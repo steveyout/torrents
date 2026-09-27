@@ -84,24 +84,24 @@ export const metadata = {
   icons: [
     {
       rel: 'icon',
-      url: `${CONFIG.assetsDir}/favicon/favicon.ico`,
+      url: `${CONFIG.site.basePath}/logo/favicon/favicon-32x32.png`,
+      sizes: '32x32',
+      type: 'image/png',
     },
     {
       rel: 'icon',
       type: 'image/png',
       sizes: '16x16',
-      url: `${CONFIG.assetsDir}/favicon/favicon-16x16.png`,
+      url: `${CONFIG.site.basePath}/logo/favicon/favicon-16x16.png`,
     },
     {
       rel: 'icon',
-      type: 'image/png',
-      sizes: '32x32',
-      url: `${CONFIG.assetsDir}/favicon/favicon-32x32.png`,
+      url: `${CONFIG.site.basePath}/favicon.ico`,
     },
     {
       rel: 'apple-touch-icon',
       sizes: '180x180',
-      url: `${CONFIG.assetsDir}/favicon/apple-touch-icon.png`,
+      url: `${CONFIG.site.basePath}/logo/favicon/apple-touch-icon.png`,
     },
   ],
   manifest: '/manifest.json',

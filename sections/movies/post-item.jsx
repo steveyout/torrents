@@ -225,7 +225,7 @@ export function PostItem({ post, index = 0 }) {
 
             {displayDate && (
               <Box component="span" sx={{ fontSize: '0.72rem', color: 'text.disabled' }}>
-                {fDate(displayDate, 'MMM yyyy')}
+                {fDate(displayDate, 'MMM YYYY')}
               </Box>
             )}
           </Stack>
@@ -410,7 +410,7 @@ export function PostItemLatest({ post, index = 0 }) {
             </Box>
 
             {releaseYear && <span>• {releaseYear}</span>}
-            {displayDate && <span>• {fDate(displayDate, 'MMMM d, yyyy')}</span>}
+            {displayDate && <span>• {fDate(displayDate, 'MMMM D, YYYY')}</span>}
           </Stack>
 
           <Typography
