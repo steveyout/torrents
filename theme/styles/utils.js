@@ -61,7 +61,16 @@ export function hexToRgbChannel(hex) {
 }
 
 /**
- * Converts a hex color to RGB channels
+ * Converts a hex color code to an RGB object.
+ */
+export function hexToRgb(hex) {
+  const [r, g, b] = hexToRgbChannel(hex).split(' ');
+
+  return { r: Number(r), g: Number(g), b: Number(b) };
+}
+
+/**
+ * Creates a palette channel object from a hex color palette.
  */
 export function createPaletteChannel(hexPalette) {
   const channelPalette = {};
@@ -77,6 +86,10 @@ export function createPaletteChannel(hexPalette) {
  * Color with alpha channel
  */
 export function varAlpha(color, opacity = 1) {
+  if (!color || typeof color !== 'string') {
+    return 'transparent';
+  }
+
   const unsupported =
     color.startsWith('#') ||
     color.startsWith('rgb') ||

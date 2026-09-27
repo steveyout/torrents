@@ -198,7 +198,7 @@ export function PostListHomeView({ categories }) {
               '&::-webkit-scrollbar': { display: 'none' },
               borderRadius: 3,
               bgcolor: (t) => varAlpha(t.vars.palette.background.paperChannel, 0.55),
-              border: (t) => `1px solid ${varAlpha(t.vars.palette.divider, 0.12)}`,
+              border: (t) => `1px solid ${varAlpha(t.vars.palette.grey['500Channel'], 0.12)}`,
               backdropFilter: 'blur(16px)',
               boxShadow: (t) => `0 4px 24px -4px ${varAlpha(t.vars.palette.common.blackChannel, 0.18)}`,
             }}
@@ -235,9 +235,7 @@ export function PostListHomeView({ categories }) {
                     transition: 'all 0.22s cubic-bezier(0.4, 0, 0.2, 1)',
                     '&:hover': {
                       color: active ? 'common.white' : 'text.primary',
-                      bgcolor: active
-                        ? 'primary.main'
-                        : (t) => varAlpha(t.vars.palette.action.hoverChannel, 0.08),
+                      bgcolor: active ? 'primary.main' : 'action.hover',
                     },
                   }}
                 >
