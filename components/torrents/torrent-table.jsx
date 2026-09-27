@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { fDate, fAge } from '@/utils/format-time';
 import { fData } from '@/utils/format-number';
 import { Iconify } from '@/components/iconify';
+import { trackDownload } from '@/utils/gtag';
 
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
@@ -160,6 +161,7 @@ export function TorrentTable({
     try {
       if (torrent.magnetUrl) {
         await copyToClipboard(torrent.magnetUrl);
+        trackDownload(torrent, 'magnet');
         setCopiedId(id);
         setFeedback({ severity: 'success', message: 'Magnet URI copied to clipboard!' });
         setTimeout(() => setCopiedId(null), 2500);
@@ -177,6 +179,7 @@ export function TorrentTable({
         if (data.magnetUrl) {
           torrent.magnetUrl = data.magnetUrl;
           await copyToClipboard(data.magnetUrl);
+          trackDownload(torrent, 'magnet');
           setCopiedId(id);
           setFeedback({ severity: 'success', message: 'Magnet URI resolved & copied to clipboard!' });
           setTimeout(() => setCopiedId(null), 2500);
@@ -200,6 +203,7 @@ export function TorrentTable({
     try {
       if (torrent.magnetUrl) {
         window.location.href = torrent.magnetUrl;
+        trackDownload(torrent, 'client');
         setFeedback({ severity: 'info', message: 'Launching torrent client...' });
         return;
       }
@@ -214,6 +218,7 @@ export function TorrentTable({
         if (data.magnetUrl) {
           torrent.magnetUrl = data.magnetUrl;
           window.location.href = data.magnetUrl;
+          trackDownload(torrent, 'client');
           setFeedback({ severity: 'info', message: 'Launching torrent client...' });
           return;
         }
@@ -262,6 +267,7 @@ export function TorrentTable({
       a.download = `${cleanName}.torrent`;
       document.body.appendChild(a);
       a.click();
+      trackDownload(torrent, 'file');
       window.URL.revokeObjectURL(blobUrl);
       document.body.removeChild(a);
 

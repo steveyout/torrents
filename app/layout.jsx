@@ -9,7 +9,7 @@ import { detectLanguage } from '@/locales/server';
 import { I18nProvider } from '@/locales/i18n-provider';
 import { ThemeProvider } from '@/theme/theme-provider';
 import { ProgressBar } from '@/components/progress-bar';
-import { GoogleAnalytics } from '@next/third-parties/google';
+import { GtagTracker } from '@/components/analytics';
 import { MotionLazy } from '@/components/animate/motion-lazy';
 import { detectSettings } from '@/components/settings/server';
 import { getInitColorSchemeScript } from '@/theme/color-scheme-script';
@@ -38,38 +38,37 @@ export const metadata = {
     'RARBG',
     'FitGirl Repacks',
     'DODI Repacks',
-    'Nyaa',
-    'Rutracker',
-    'AudioBookBay',
-    'Internet Archive',
-    'Torrent search engine',
-    'Magnet search',
-    'Download torrents free',
-    'Movies torrents 1080p 4K UHD',
-    'TV series torrents packs',
-    'PC games torrent repacks',
-    'Lossless FLAC music torrents',
-    'Audiobooks torrents free',
-    'eBooks PDF EPUB torrents',
-    'Verified torrents',
-    'Fast torrent download',
-    'Jackett torznab search',
-    'BitTorrent magnet links',
+    'Free Movies Download',
+    'Download 4K Movies',
+    'TV Series Magnet Links',
+    'PC Games Torrents',
+    'FLAC Music Torrents',
+    'Audiobook Torrents',
+    'Fast Torrent Search',
+    'Verified Torrent Seeds',
   ],
   openGraph: {
-    type: 'website',
-    locale: 'en_US',
-    url: 'https://youplex.site',
-    siteName: 'Youplex Torrents',
     title: 'Youplex - Fast Torrent Search Engine & Magnet Links',
     description:
-      'Universal torrent search engine indexing The Pirate Bay, 1337x, YTS, LimeTorrents, TorrentGalaxy, EZTV, and FitGirl. 1-click magnet links and high-speed downloads.',
+      'Search and download verified torrents across TPB, 1337x, YTS, LimeTorrents, TorrentGalaxy, and more. 4K Movies, TV Series, PC Games, FLAC Music, and Books.',
+    siteName: 'Youplex',
+    images: [
+      {
+        url: '/assets/logo/logo-single.svg',
+        width: 512,
+        height: 512,
+        alt: 'Youplex Logo',
+      },
+    ],
+    locale: 'en_US',
+    type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Youplex - Fast Torrent Search Engine & Magnet Links',
     description:
-      'Download verified torrents and magnet links across major torrent sites: The Pirate Bay, 1337x, YTS, LimeTorrents, TorrentGalaxy, and more.',
+      'Search and download verified torrents across TPB, 1337x, YTS, LimeTorrents, TorrentGalaxy, and more.',
+    images: ['/assets/logo/logo-single.svg'],
   },
   robots: {
     index: true,
@@ -82,26 +81,34 @@ export const metadata = {
       'max-snippet': -1,
     },
   },
+  icons: [
+    {
+      rel: 'icon',
+      url: `${CONFIG.assetsDir}/favicon/favicon.ico`,
+    },
+    {
+      rel: 'icon',
+      type: 'image/png',
+      sizes: '16x16',
+      url: `${CONFIG.assetsDir}/favicon/favicon-16x16.png`,
+    },
+    {
+      rel: 'icon',
+      type: 'image/png',
+      sizes: '32x32',
+      url: `${CONFIG.assetsDir}/favicon/favicon-32x32.png`,
+    },
+    {
+      rel: 'apple-touch-icon',
+      sizes: '180x180',
+      url: `${CONFIG.assetsDir}/favicon/apple-touch-icon.png`,
+    },
+  ],
   manifest: '/manifest.json',
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: 'default',
-    title: 'Youplex Torrents',
-  },
-  formatDetection: {
-    telephone: false,
-  },
-  other: {
-    'torrent:trackers':
-      'The Pirate Bay, 1337x, YTS, LimeTorrents, TorrentGalaxy, EZTV, FitGirl, Internet Archive',
-    'torrent:categories': 'Movies, TV Shows, Games, Music, Audiobooks, Books',
-  },
 };
 
 export const viewport = {
-  width: 'device-width',
-  initialScale: 1,
-  themeColor: PRIMARY_COLOR.red.main,
+  themeColor: PRIMARY_COLOR.dark,
 };
 
 export default async function RootLayout({ children }) {
@@ -124,8 +131,8 @@ export default async function RootLayout({ children }) {
                   <Snackbar />
                   <ProgressBar />
                   <SettingsDrawer />
-                  {/* Google tag (gtag.js) */}
-                  <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ?? ''} />
+                  {/* Google tag (gtag.js) analytics */}
+                  <GtagTracker />
                   {children}
                 </MotionLazy>
               </ThemeProvider>

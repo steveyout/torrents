@@ -6,6 +6,7 @@ import { varAlpha } from '@/theme/styles';
 import { searchMedia } from '@/actions/api';
 import { Iconify } from '@/components/iconify';
 import { TorrentTable } from '@/components/torrents';
+import { trackSearch } from '@/utils/gtag';
 import { useDebounce } from '@/hooks/use-debounce';
 import { useMemo, useState, useEffect, useCallback } from 'react';
 
@@ -63,7 +64,10 @@ export function PostListHomeView({ categories }) {
     setTorrentsLoading(true);
     try {
       const params = new URLSearchParams({ category: cat });
-      if (query.trim()) params.set('q', query.trim());
+      if (query.trim()) {
+        params.set('q', query.trim());
+        trackSearch(query.trim(), cat);
+      }
       const res = await fetch(`/api/torrents?${params.toString()}`);
       if (res.ok) {
         const data = await res.json();
@@ -87,6 +91,7 @@ export function PostListHomeView({ categories }) {
   const handleSearch = useCallback(async (inputValue) => {
     setSearchQuery(inputValue);
     if (inputValue.length > 2) {
+      trackSearch(inputValue, 'movies/shows');
       setSearchLoading(true);
       try {
         const data = await searchMedia(inputValue);
