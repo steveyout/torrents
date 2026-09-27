@@ -10,10 +10,12 @@ import { SvgColor } from '../../svg-color';
 // ----------------------------------------------------------------------
 
 export function FontOptions({ value, options, onClickOption }) {
+  const uniqueOptions = Array.from(new Set(options || []));
+
   return (
     <Block title="Font">
       <Box component="ul" gap={1.5} display="grid" gridTemplateColumns="repeat(2, 1fr)">
-        {options.map((option) => {
+        {uniqueOptions.map((option) => {
           const selected = value === option;
 
           return (
