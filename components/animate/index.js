@@ -17,3 +17,5 @@ export * from './scroll-progress';
 export * from './animate-count-up';
 
 export * from './motion-container';
+
+export * from './scroll-reveal';

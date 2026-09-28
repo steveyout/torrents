@@ -18,6 +18,7 @@ import { SettingsDrawer, defaultSettings, SettingsProvider } from '@/components/
 // ----------------------------------------------------------------------
 
 export const metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_SERVER_URL || 'https://torrents.youplex.site'),
   title: {
     default: 'Youplex - Fast Torrent Search Engine & Magnet Links',
     template: '%s | Youplex Torrents',

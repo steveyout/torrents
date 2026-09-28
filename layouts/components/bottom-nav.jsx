@@ -1,7 +1,7 @@
 'use client';
 
 import { paths } from '@/routes/paths';
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { varAlpha } from '@/theme/styles';
 import { usePathname } from '@/routes/hooks';
 import { Iconify } from '@/components/iconify';
@@ -29,15 +29,56 @@ export function BottomNav({ sx }) {
   const theme = useTheme();
   const pathname = usePathname();
 
-  const lastY = useRef(0);
-  const { scrollY } = useScroll();
-
+  const lastScrollY = useRef(0);
+  const lastToggledY = useRef(0);
+  const isHiddenRef = useRef(false);
   const [hidden, setHidden] = useState(false);
 
-  useMotionValueEvent(scrollY, 'change', (y) => {
-    const isScrollingDown = y > lastY.current;
-    setHidden(isScrollingDown && y > 120);
-    lastY.current = y;
+  const { scrollY } = useScroll();
+
+  // Reset visibility when route changes
+  useEffect(() => {
+    isHiddenRef.current = false;
+    setHidden(false);
+    lastScrollY.current = 0;
+    lastToggledY.current = 0;
+  }, [pathname]);
+
+  // Smooth, throttled scroll listener with directional hysteresis
+  useMotionValueEvent(scrollY, 'change', (latest) => {
+    const currentY = Math.max(0, latest);
+
+    // Always show when near the top of the page
+    if (currentY < 80) {
+      if (isHiddenRef.current) {
+        isHiddenRef.current = false;
+        setHidden(false);
+      }
+      lastScrollY.current = currentY;
+      lastToggledY.current = currentY;
+      return;
+    }
+
+    const diff = currentY - lastScrollY.current;
+
+    // Scrolling down by threshold (20px) -> hide bottom bar
+    if (diff > 0 && currentY - lastToggledY.current > 20) {
+      if (!isHiddenRef.current) {
+        isHiddenRef.current = true;
+        setHidden(true);
+      }
+      lastToggledY.current = currentY;
+    }
+    // Scrolling up by threshold (14px) -> reveal bottom bar
+    else if (diff < 0 && lastToggledY.current - currentY > 14) {
+      if (isHiddenRef.current) {
+        isHiddenRef.current = false;
+        setHidden(false);
+      }
+      lastToggledY.current = currentY;
+    }
+
+    lastScrollY.current = currentY;
   });
 
   return (
@@ -59,10 +100,24 @@ export function BottomNav({ sx }) {
       }}
     >
       <m.div
-        initial={{ y: 120, opacity: 0 }}
-        animate={{ y: hidden ? 120 : 0, opacity: hidden ? 0 : 1 }}
-        transition={{ type: 'spring', stiffness: 320, damping: 28 }}
-        style={{ pointerEvents: 'auto', maxWidth: '100%' }}
+        initial={false}
+        animate={{
+          y: hidden ? 92 : 0,
+          opacity: hidden ? 0 : 1,
+          scale: hidden ? 0.96 : 1,
+        }}
+        transition={{
+          duration: 0.28,
+          ease: [0.22, 1, 0.36, 1],
+        }}
+        style={{
+          pointerEvents: hidden ? 'none' : 'auto',
+          maxWidth: '100%',
+          willChange: 'transform, opacity',
+          transform: 'translateZ(0)',
+          WebkitBackfaceVisibility: 'hidden',
+          backfaceVisibility: 'hidden',
+        }}
       >
         <Stack
           direction="row"
@@ -71,11 +126,12 @@ export function BottomNav({ sx }) {
           sx={{
             p: 0.6,
             borderRadius: 999,
-            border: `1px solid ${varAlpha(theme.vars.palette.divider, 0.12)}`,
-            background: `linear-gradient(180deg, ${varAlpha(theme.vars.palette.background.paperChannel, 0.88)}, ${varAlpha(theme.vars.palette.background.defaultChannel, 0.94)})`,
-            backdropFilter: 'blur(24px)',
-            WebkitBackdropFilter: 'blur(24px)',
-            boxShadow: `0 16px 36px -8px rgba(0, 0, 0, 0.56), 0 0 0 1px ${varAlpha(theme.vars.palette.common.whiteChannel, 0.06)}`,
+            border: `1px solid ${varAlpha(theme.vars.palette.divider, 0.14)}`,
+            background: `linear-gradient(180deg, ${varAlpha(theme.vars.palette.background.paperChannel, 0.92)}, ${varAlpha(theme.vars.palette.background.defaultChannel, 0.96)})`,
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            transform: 'translateZ(0)',
+            boxShadow: `0 14px 34px -6px rgba(0, 0, 0, 0.52), 0 0 0 1px ${varAlpha(theme.vars.palette.common.whiteChannel, 0.08)}`,
           }}
         >
           {NAV_ITEMS.map((item) => {

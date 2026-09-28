@@ -7,6 +7,7 @@ import { useRef, useMemo, useState, useCallback } from 'react';
 
 export function useScrollOffSetTop(top = 0) {
   const elementRef = useRef(null);
+  const isOffsetRef = useRef(false);
 
   const { scrollY } = useScroll();
 
@@ -15,14 +16,19 @@ export function useScrollOffSetTop(top = 0) {
   const handleScrollChange = useCallback(
     (val) => {
       const scrollHeight = Math.round(val);
+      let isTop = false;
 
       if (elementRef?.current) {
         const rect = elementRef.current.getBoundingClientRect();
         const elementTop = Math.round(rect.top);
-
-        setOffsetTop(elementTop < top);
+        isTop = elementTop < top;
       } else {
-        setOffsetTop(scrollHeight > top);
+        isTop = scrollHeight > top;
+      }
+
+      if (isOffsetRef.current !== isTop) {
+        isOffsetRef.current = isTop;
+        setOffsetTop(isTop);
       }
     },
     [elementRef, top]
@@ -38,15 +44,3 @@ export function useScrollOffSetTop(top = 0) {
 
   return memoizedValue;
 }
-
-/*
- * 1: Applies to top <header/>
- * const { offsetTop } = useScrollOffSetTop(80);
- *
- * Or
- *
- * 2: Applies to element
- * const { offsetTop, elementRef } = useScrollOffSetTop(80);
- * <div ref={elementRef} />
- *
- */

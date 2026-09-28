@@ -21,6 +21,9 @@ export function BackgroundGradient() {
         zIndex: -1,
         overflow: 'hidden',
         pointerEvents: 'none',
+        transform: 'translateZ(0)',
+        willChange: 'transform',
+        contain: 'strict',
       }}
     >
       <Box

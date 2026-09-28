@@ -54,7 +54,6 @@
 html {
   height: 100%;
   -webkit-overflow-scrolling: touch;
-  scroll-behavior: smooth;
 }
 body,
 #root,
@@ -234,6 +233,11 @@ input[type='number']::-webkit-inner-spin-button {
   .youplex-glow-pulse,
   .youplex-aurora {
     animation: none !important;
+  }
+  .youplex-scroll-reveal {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
   }
 }
 

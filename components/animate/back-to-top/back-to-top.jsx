@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useScroll, useMotionValueEvent } from 'framer-motion';
 
 import Fab from '@mui/material/Fab';
@@ -11,6 +11,7 @@ export function BackToTop({ value = 90, sx, ...other }) {
   const { scrollYProgress } = useScroll();
 
   const [show, setShow] = useState(false);
+  const showRef = useRef(false);
 
   const backToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -18,7 +19,10 @@ export function BackToTop({ value = 90, sx, ...other }) {
 
   useMotionValueEvent(scrollYProgress, 'change', (latest) => {
     const isEnd = Math.floor(latest * 100) > value; // unit is %
-    setShow(isEnd);
+    if (showRef.current !== isEnd) {
+      showRef.current = isEnd;
+      setShow(isEnd);
+    }
   });
 
   return (
@@ -29,12 +33,15 @@ export function BackToTop({ value = 90, sx, ...other }) {
         width: 48,
         height: 48,
         position: 'fixed',
-        transform: 'scale(0)',
+        transform: 'scale(0) translateZ(0)',
         right: { xs: 24, md: 32 },
-        bottom: { xs: 24, md: 32 },
+        bottom: { xs: 'calc(76px + env(safe-area-inset-bottom, 0px))', md: 32 },
         zIndex: (theme) => theme.zIndex.speedDial,
-        transition: (theme) => theme.transitions.create(['transform']),
-        ...(show && { transform: 'scale(1)' }),
+        transition: (theme) => theme.transitions.create(['transform'], {
+          duration: theme.transitions.duration.shorter,
+        }),
+        willChange: 'transform',
+        ...(show && { transform: 'scale(1) translateZ(0)' }),
         ...sx,
       }}
       {...other}
