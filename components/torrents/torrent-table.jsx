@@ -504,19 +504,29 @@ export function TorrentTable({
                     </TableCell>
 
                     <TableCell align="center">
-                      <Chip
-                        label={torrent.seeders || 0}
-                        size="small"
-                        color={torrent.seeders > 10 ? 'success' : torrent.seeders > 0 ? 'warning' : 'default'}
-                        variant={torrent.seeders > 0 ? 'filled' : 'outlined'}
-                        sx={{ fontWeight: 700, minWidth: 42 }}
-                      />
+                      <Tooltip title={`${torrent.seeders || 0} seeders (uploading)`} arrow placement="top">
+                        <Chip
+                          icon={<Iconify icon="solar:arrow-up-bold" width={11} />}
+                          label={torrent.seeders || 0}
+                          size="small"
+                          color={torrent.seeders > 10 ? 'success' : torrent.seeders > 0 ? 'warning' : 'default'}
+                          variant={torrent.seeders > 0 ? 'filled' : 'outlined'}
+                          sx={{ fontWeight: 700, minWidth: 46 }}
+                        />
+                      </Tooltip>
                     </TableCell>
 
                     <TableCell align="center">
-                      <Typography variant="caption" color="text.secondary">
-                        {torrent.leechers || 0}
-                      </Typography>
+                      <Tooltip title={`${torrent.leechers || 0} leechers (downloading)`} arrow placement="top">
+                        <Chip
+                          icon={<Iconify icon="solar:arrow-down-bold" width={11} />}
+                          label={torrent.leechers || 0}
+                          size="small"
+                          color={torrent.leechers > 0 ? 'error' : 'default'}
+                          variant={torrent.leechers > 0 ? 'soft' : 'outlined'}
+                          sx={{ fontWeight: 700, minWidth: 46 }}
+                        />
+                      </Tooltip>
                     </TableCell>
 
                     <TableCell align="center">

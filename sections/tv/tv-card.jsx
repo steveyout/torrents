@@ -27,7 +27,7 @@ export function TvCard({ post, rowIndex, colIndex }) {
   const displayDate = post.first_air_date || post.release_date;
   const releaseYear = displayDate ? new Date(displayDate).getFullYear() : null;
   const type = post.media_type || (post.release_date ? 'movie' : 'tv');
-  const linkTo = paths.watch.details(type, post.id, displayTitle);
+  const linkTo = paths.torrent.details(type, post.id, displayTitle);
 
   // Auto-scroll focused card into view
   useEffect(() => {

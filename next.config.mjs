@@ -10,9 +10,36 @@ const withPWA = withPWAInit({
 
 const nextConfig = {
   trailingSlash: false,
+  compress: true,
+  poweredByHeader: false,
   basePath: process.env.NEXT_PUBLIC_BASE_PATH,
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'image.tmdb.org',
+      },
+    ],
+  },
   env: {
     BUILD_STATIC_EXPORT: isStaticExport,
+  },
+  async redirects() {
+    return [
+      {
+        source: '/watch/:type/:title',
+        destination: '/torrent/:type/:title',
+        permanent: true,
+      },
+    ];
+  },
+  async rewrites() {
+    return [
+      {
+        source: '/torrents/:type/:title',
+        destination: '/torrent/:type/:title',
+      },
+    ];
   },
   modularizeImports: {
     '@mui/icons-material': {

@@ -1,11 +1,23 @@
 [
   {
+    "pathname": "/torrent/movie/spider-man-brand-new-day",
+    "id": "969681"
+  },
+  {
     "pathname": "/watch/movie/spider-man-brand-new-day",
     "id": "969681"
   },
   {
+    "pathname": "/torrent/movie/over-your-dead-body",
+    "id": "1390300"
+  },
+  {
     "pathname": "/watch/movie/over-your-dead-body",
     "id": "1390300"
+  },
+  {
+    "pathname": "/torrent/tv/blood-sacrifice",
+    "id": "303351"
   },
   {
     "pathname": "/watch/tv/blood-sacrifice",

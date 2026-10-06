@@ -125,7 +125,7 @@ function HeroBannerItem({ item, isActive }) {
     : '/fallback-backdrop.jpg';
 
   const handleTorrents = () => {
-    router.push(paths.watch.details(type, item.id, title));
+    router.push(paths.torrent.details(type, item.id, title));
   };
 
   return (

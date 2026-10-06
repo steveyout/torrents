@@ -21,55 +21,14 @@ export function BackgroundGradient() {
         zIndex: -1,
         overflow: 'hidden',
         pointerEvents: 'none',
-        transform: 'translateZ(0)',
-        willChange: 'transform',
         contain: 'strict',
+        opacity: 0.65,
+        background: `
+          radial-gradient(circle 650px at 15% 10%, ${varAlpha(primary.mainChannel, 0.16)}, transparent 65%),
+          radial-gradient(circle 700px at 85% 25%, ${varAlpha(secondary.mainChannel, 0.12)}, transparent 65%),
+          radial-gradient(circle 600px at 50% 85%, ${varAlpha(info.mainChannel, 0.1)}, transparent 65%)
+        `,
       }}
-    >
-      <Box
-        className="youplex-aurora"
-        sx={{
-          top: '-12%',
-          left: '-8%',
-          width: { xs: 460, md: 640 },
-          height: { xs: 460, md: 640 },
-          animation: 'youplex-drift-a 30s ease-in-out infinite',
-          background: `radial-gradient(circle at 50% 50%, ${varAlpha(
-            primary.mainChannel,
-            0.32
-          )}, transparent 65%)`,
-        }}
-      />
-
-      <Box
-        className="youplex-aurora"
-        sx={{
-          top: '18%',
-          right: '-14%',
-          width: { xs: 520, md: 720 },
-          height: { xs: 520, md: 720 },
-          animation: 'youplex-drift-b 38s ease-in-out infinite',
-          background: `radial-gradient(circle at 50% 50%, ${varAlpha(
-            secondary.mainChannel,
-            0.24
-          )}, transparent 65%)`,
-        }}
-      />
-
-      <Box
-        className="youplex-aurora"
-        sx={{
-          bottom: '-18%',
-          left: '16%',
-          width: { xs: 540, md: 700 },
-          height: { xs: 540, md: 700 },
-          animation: 'youplex-drift-c 44s ease-in-out infinite',
-          background: `radial-gradient(circle at 50% 50%, ${varAlpha(
-            info.mainChannel,
-            0.18
-          )}, transparent 65%)`,
-        }}
-      />
-    </Box>
+    />
   );
 }

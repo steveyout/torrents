@@ -1,38 +1,15 @@
 /** **************************************
-* Fonts: app
+* Fonts: app (Inter & Public Sans)
 *************************************** */
-@import '@fontsource/public-sans/400.css';
-@import '@fontsource/public-sans/500.css';
-@import '@fontsource/public-sans/600.css';
-@import '@fontsource/public-sans/700.css';
-@import '@fontsource/public-sans/800.css';
-
-@import '@fontsource/barlow/400.css';
-@import '@fontsource/barlow/500.css';
-@import '@fontsource/barlow/600.css';
-@import '@fontsource/barlow/700.css';
-@import '@fontsource/barlow/800.css';
-
-/** **************************************
-* Fonts: options
-*************************************** */
-@import '@fontsource/dm-sans/400.css';
-@import '@fontsource/dm-sans/500.css';
-@import '@fontsource/dm-sans/600.css';
-@import '@fontsource/dm-sans/700.css';
-@import '@fontsource/dm-sans/800.css';
-
 @import '@fontsource/inter/400.css';
 @import '@fontsource/inter/500.css';
 @import '@fontsource/inter/600.css';
 @import '@fontsource/inter/700.css';
 @import '@fontsource/inter/800.css';
 
-@import '@fontsource/nunito-sans/400.css';
-@import '@fontsource/nunito-sans/500.css';
-@import '@fontsource/nunito-sans/600.css';
-@import '@fontsource/nunito-sans/700.css';
-@import '@fontsource/nunito-sans/800.css';
+@import '@fontsource/public-sans/400.css';
+@import '@fontsource/public-sans/600.css';
+@import '@fontsource/public-sans/700.css';
 
 /** **************************************
 * Plugins
@@ -43,10 +20,8 @@
 /* image */
 @import '@/components/image/styles.css';
 
-
 /* lightbox */
 @import '@/components/lightbox/styles.css';
-
 
 /** **************************************
 * Baseline
@@ -152,46 +127,6 @@ input[type='number']::-webkit-inner-spin-button {
   }
 }
 
-/* Slow aurora drift used on page background gradients */
-@keyframes youplex-drift-a {
-  0% {
-    transform: translate3d(-6%, -4%, 0) scale(1);
-  }
-  50% {
-    transform: translate3d(7%, 5%, 0) scale(1.12);
-  }
-  100% {
-    transform: translate3d(-6%, -4%, 0) scale(1);
-  }
-}
-
-@keyframes youplex-drift-b {
-  0% {
-    transform: translate3d(5%, 6%, 0) scale(1.05);
-  }
-  50% {
-    transform: translate3d(-7%, -6%, 0) scale(0.92);
-  }
-  100% {
-    transform: translate3d(5%, 6%, 0) scale(1.05);
-  }
-}
-
-@keyframes youplex-drift-c {
-  0% {
-    transform: translate3d(0%, 0%, 0) scale(1);
-  }
-  33% {
-    transform: translate3d(4%, -8%, 0) scale(1.1);
-  }
-  66% {
-    transform: translate3d(-5%, 6%, 0) scale(0.95);
-  }
-  100% {
-    transform: translate3d(0%, 0%, 0) scale(1);
-  }
-}
-
 .youplex-kenburns {
   transform-origin: center 20%;
   animation: youplex-kenburns 22s ease-out both;
@@ -212,14 +147,6 @@ input[type='number']::-webkit-inner-spin-button {
   animation: youplex-shimmer 3s linear infinite;
 }
 
-/* Aurora background blob (positioned/colored/sized/anim by the component) */
-.youplex-aurora {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(90px);
-  will-change: transform;
-}
-
 /* Respect users who prefer reduced motion */
 @media (prefers-reduced-motion: reduce) {
   html {
@@ -230,8 +157,7 @@ input[type='number']::-webkit-inner-spin-button {
   .youplex-fade-scale,
   .youplex-shimmer,
   .youplex-loading-sheen,
-  .youplex-glow-pulse,
-  .youplex-aurora {
+  .youplex-glow-pulse {
     animation: none !important;
   }
   .youplex-scroll-reveal {
@@ -273,7 +199,7 @@ input[type='number']::-webkit-inner-spin-button {
   display: inline;
   background-color: rgba(0, 0, 0, 0.62);
   color: #ffffff;
-  font-family: 'Public Sans', sans-serif;
+  font-family: 'Inter', 'Public Sans', sans-serif;
   font-size: clamp(15px, 1.35vh, 22px);
   font-weight: 500;
   padding: 3px 8px;

@@ -1,6 +1,29 @@
 import axios, { endpoints } from '@/utils/axios';
 
 // ----------------------------------------------------------------------
+// Simple in-memory response cache for TMDB requests to boost performance
+const tmdbCache = new Map();
+const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
+
+function getCached(key) {
+  const item = tmdbCache.get(key);
+  if (!item) return null;
+  if (Date.now() - item.timestamp > CACHE_TTL_MS) {
+    tmdbCache.delete(key);
+    return null;
+  }
+  return item.data;
+}
+
+function setCached(key, data) {
+  if (tmdbCache.size > 200) {
+    const firstKey = tmdbCache.keys().next().value;
+    tmdbCache.delete(firstKey);
+  }
+  tmdbCache.set(key, { data, timestamp: Date.now() });
+}
+
+// ----------------------------------------------------------------------
 
 /**
  * Fetch Movie or Show details from TMDB
@@ -26,10 +49,15 @@ export async function getMovieOrShow(type, id) {
  * @param {number} page - Default 1
  */
 export async function getMovies(category = 'popular', page = 1) {
+  const cacheKey = `movie_${category}_${page}`;
+  const cached = getCached(cacheKey);
+  if (cached) return cached;
+
   const res = await axios.get(endpoints.tmdb.movie(category), {
     params: { page },
   });
 
+  setCached(cacheKey, res.data);
   return res.data;
 }
 
@@ -41,10 +69,15 @@ export async function getMovies(category = 'popular', page = 1) {
  * @param {number} page - Default 1
  */
 export async function getTvShows(category = 'popular', page = 1) {
+  const cacheKey = `tv_${category}_${page}`;
+  const cached = getCached(cacheKey);
+  if (cached) return cached;
+
   const res = await axios.get(endpoints.tmdb.tv(category), {
     params: { page },
   });
 
+  setCached(cacheKey, res.data);
   return res.data;
 }
 
@@ -60,12 +93,17 @@ export async function getMediaDetails(type, id) {
 
   if (!url) return null;
 
+  const cacheKey = `details_${type}_${id}`;
+  const cached = getCached(cacheKey);
+  if (cached) return cached;
+
   const res = await axios.get(url, {
     params: {
       append_to_response: 'credits',
     },
   });
 
+  setCached(cacheKey, res.data);
   return res.data;
 }
 
@@ -77,8 +115,13 @@ export async function getMediaDetails(type, id) {
  * @param {string} timeWindow - 'day' or 'week'
  */
 export async function getTrending(type = 'all', timeWindow = 'day') {
+  const cacheKey = `trending_${type}_${timeWindow}`;
+  const cached = getCached(cacheKey);
+  if (cached) return cached;
+
   const res = await axios.get(endpoints.tmdb.trending(type, timeWindow));
 
+  setCached(cacheKey, res.data);
   return res.data;
 }
 
@@ -90,6 +133,10 @@ export async function getTrending(type = 'all', timeWindow = 'day') {
  * @param {number} page
  */
 export async function searchMedia(query, page = 1) {
+  const cacheKey = `search_${query}_${page}`;
+  const cached = getCached(cacheKey);
+  if (cached) return cached;
+
   const res = await axios.get(endpoints.tmdb.search, {
     params: {
       query,
@@ -98,6 +145,7 @@ export async function searchMedia(query, page = 1) {
     },
   });
 
+  setCached(cacheKey, res.data);
   return res.data;
 }
 
@@ -113,6 +161,11 @@ export async function getRecommendations(type, id) {
 
   if (!url) return { results: [] };
 
+  const cacheKey = `rec_${type}_${id}`;
+  const cached = getCached(cacheKey);
+  if (cached) return cached;
+
   const res = await axios.get(url);
+  setCached(cacheKey, res.data);
   return res.data;
 }

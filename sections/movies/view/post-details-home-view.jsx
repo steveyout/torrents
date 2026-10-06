@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { paths } from '@/routes/paths';
+import { paramCase } from '@/utils/change-case';
 import { useRouter } from '@/routes/hooks';
 import { fDate } from '@/utils/format-time';
 import { Iconify } from '@/components/iconify';
+import { Label } from '@/components/label';
 import { RouterLink } from '@/routes/components';
 import { CustomBreadcrumbs } from '@/components/custom-breadcrumbs';
 import { TorrentTable } from '@/components/torrents';
@@ -41,6 +43,14 @@ export function PostDetailsHomeView({ post, latestPosts, videoParams }) {
   const seasons = post?.seasons?.filter((s) => s.season_number > 0) || [];
   const currentSeasonData = post?.seasons?.find((s) => s.season_number === videoParams.season);
   const totalEpisodes = currentSeasonData?.episode_count || 0;
+
+  // Stream URL to youplex.site
+  const streamType = isTv ? 'tv' : 'movie';
+  const streamSlug = paramCase(displayTitle || 'watch');
+  const streamBaseUrl = `https://youplex.site/watch/${streamType}/${streamSlug}/play?id=${videoParams.id}`;
+  const streamUrl = isTv
+    ? `${streamBaseUrl}&season=${videoParams.season || 1}&episode=${videoParams.episode || 1}`
+    : streamBaseUrl;
 
   // Torrents fetching
   const [torrents, setTorrents] = useState([]);
@@ -86,7 +96,7 @@ export function PostDetailsHomeView({ post, latestPosts, videoParams }) {
 
   const handleSeasonChange = (event) => {
     const newSeason = event.target.value;
-    const path = paths.watch.details(videoParams.type, videoParams.id, displayTitle, newSeason, 1);
+    const path = paths.torrent.details(videoParams.type, videoParams.id, displayTitle, newSeason, 1);
     router.push(path);
   };
 
@@ -107,17 +117,47 @@ export function PostDetailsHomeView({ post, latestPosts, videoParams }) {
             <Stack spacing={3}>
               <Typography variant="h3">{displayTitle}</Typography>
 
-              <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
-                <Typography variant="subtitle2" sx={{ color: 'primary.main' }}>
-                  {displayDate ? fDate(displayDate) : 'Unknown'}
-                </Typography>
-                <Chip label={videoParams.type.toUpperCase()} size="small" variant="outlined" />
-                {post?.vote_average > 0 && (
-                  <Stack direction="row" alignItems="center" spacing={0.5}>
-                    <Iconify icon="eva:star-fill" sx={{ color: 'warning.main' }} />
-                    <Typography variant="subtitle2">{post.vote_average.toFixed(1)}</Typography>
-                  </Stack>
+              <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" useFlexGap>
+                {displayDate && (
+                  <Typography variant="subtitle2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+                    {fDate(displayDate)}
+                  </Typography>
                 )}
+
+                <Label variant="filled" color="primary">
+                  {isTv ? 'TV Series' : 'Movie'}
+                </Label>
+
+                {post?.vote_average > 0 && (
+                  <Label
+                    variant="filled"
+                    color={(post.vote_average >= 7 && 'success') || (post.vote_average >= 5 && 'warning') || 'error'}
+                    startIcon={<Iconify icon="solar:star-bold" width={13} />}
+                  >
+                    {post.vote_average.toFixed(1)}
+                  </Label>
+                )}
+
+                {/* Stream Now button */}
+                <Button
+                  component="a"
+                  href={streamUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  variant="contained"
+                  color="primary"
+                  size="small"
+                  startIcon={<Iconify icon="solar:play-circle-bold" width={18} />}
+                  sx={{
+                    textTransform: 'none',
+                    fontWeight: 700,
+                    borderRadius: 1.5,
+                    px: 2,
+                    boxShadow: (th) => `0 6px 18px ${alpha(th.palette.primary.main, 0.4)}`,
+                  }}
+                >
+                  Stream Now
+                </Button>
               </Stack>
 
               {/* Season & Episode Selector */}
@@ -162,7 +202,7 @@ export function PostDetailsHomeView({ post, latestPosts, videoParams }) {
                           <Button
                             key={epNumber}
                             component={RouterLink}
-                            href={paths.watch.details(
+                            href={paths.torrent.details(
                               videoParams.type,
                               videoParams.id,
                               displayTitle,
@@ -203,9 +243,14 @@ export function PostDetailsHomeView({ post, latestPosts, videoParams }) {
                 {post?.overview}
               </Typography>
 
-              <Stack direction="row" flexWrap="wrap" spacing={1}>
+              <Stack direction="row" flexWrap="wrap" spacing={1} useFlexGap>
                 {post?.genres?.map((genre) => (
-                  <Chip key={genre.id} label={genre.name} variant="soft" />
+                  <Chip
+                    key={genre.id}
+                    label={genre.name}
+                    size="small"
+                    variant="soft"
+                  />
                 ))}
               </Stack>
             </Stack>

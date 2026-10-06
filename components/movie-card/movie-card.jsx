@@ -35,7 +35,7 @@ export default function MovieCard({ movie, index = 0 }) {
   const releaseYear = displayDate ? new Date(displayDate).getFullYear() : null;
   const type = media_type || (release_date ? 'movie' : 'tv');
 
-  const linkTo = id ? paths.watch.details(type, id, displayTitle) : '#';
+  const linkTo = id ? paths.torrent.details(type, id, displayTitle) : '#';
 
   return (
     <Box

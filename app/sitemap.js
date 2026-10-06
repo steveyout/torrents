@@ -11,6 +11,7 @@ export default async function sitemap() {
     '',
     '/movies',
     '/tv',
+    '/torrents',
     // '/faqs',
   ].map((route) => ({
     url: `${baseUrl}${route}`,
@@ -24,7 +25,7 @@ export default async function sitemap() {
   try {
     const popularMovies = await getMovies('popular');
     movieRoutes = (popularMovies?.results || []).map((movie) => ({
-      url: `${baseUrl}/watch/movie/${encodeURIComponent(movie.title.replace(/\s+/g, '-').toLowerCase())}?id=${movie.id}`,
+      url: `${baseUrl}/torrent/movie/${encodeURIComponent(movie.title.replace(/\s+/g, '-').toLowerCase())}?id=${movie.id}`,
       lastModified: new Date().toISOString(),
       changeFrequency: 'weekly',
       priority: 0.8,
@@ -38,7 +39,7 @@ export default async function sitemap() {
   try {
     const popularTv = await getTvShows('popular');
     tvRoutes = (popularTv?.results || []).map((tv) => ({
-      url: `${baseUrl}/watch/tv/${encodeURIComponent(tv.name.replace(/\s+/g, '-').toLowerCase())}?id=${tv.id}`,
+      url: `${baseUrl}/torrent/tv/${encodeURIComponent(tv.name.replace(/\s+/g, '-').toLowerCase())}?id=${tv.id}`,
       lastModified: new Date().toISOString(),
       changeFrequency: 'weekly',
       priority: 0.8,

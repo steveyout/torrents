@@ -310,7 +310,7 @@ export function PostListHomeView({ categories }) {
                   hrefItem={(item) => {
                     const type = item.media_type || (item.first_air_date ? 'tv' : 'movie');
                     const title = item.title || item.name;
-                    return paths.watch.details(type, item.id, title);
+                    return paths.torrent.details(type, item.id, title);
                   }}
                 />
                 <PostSort sort={sortBy} onSort={handleSortBy} sortOptions={SORT_OPTIONS} />

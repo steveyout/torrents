@@ -83,7 +83,7 @@ export function Searchbar({ sx, ...other }) {
       const type = item.media_type || (item.first_air_date ? 'tv' : 'movie');
       const title = item.title || item.name;
 
-      router.push(paths.watch.details(type, item.id, title));
+      router.push(paths.torrent.details(type, item.id, title));
       handleClose();
     },
     [handleClose, router]
