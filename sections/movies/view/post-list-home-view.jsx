@@ -6,6 +6,7 @@ import { varAlpha } from '@/theme/styles';
 import { searchMedia } from '@/actions/api';
 import { Iconify } from '@/components/iconify';
 import { TorrentTable } from '@/components/torrents';
+import { AdPair } from '@/components/ads';
 import { trackSearch } from '@/utils/gtag';
 import { useDebounce } from '@/hooks/use-debounce';
 import { useMemo, useState, useEffect, useCallback } from 'react';
@@ -384,6 +385,7 @@ export function PostListHomeView({ categories }) {
               title={`Top ${activeTab.toUpperCase()} Releases`}
               isLoading={torrentsLoading}
             />
+            <AdPair sx={{ my: 4 }} />
           </Box>
         ) : (
           <Stack spacing={8}>
@@ -419,6 +421,8 @@ export function PostListHomeView({ categories }) {
                     categoryKey={key}
                     activeTab={activeTab}
                   />
+
+                  {sectionIdx === 1 && <AdPair sx={{ mt: 6, mb: 2 }} />}
                 </Box>
               );
             })}

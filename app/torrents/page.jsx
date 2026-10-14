@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Iconify } from '@/components/iconify';
 import { TorrentTable } from '@/components/torrents';
+import { AdPair } from '@/components/ads';
 
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
@@ -149,6 +150,9 @@ export default function TorrentsPage() {
           </Button>
         </Stack>
       </Box>
+
+      {/* Ad Placement */}
+      <AdPair sx={{ my: 3 }} />
 
       {/* Results Table */}
       <TorrentTable

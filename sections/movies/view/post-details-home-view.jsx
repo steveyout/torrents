@@ -10,6 +10,7 @@ import { Label } from '@/components/label';
 import { RouterLink } from '@/routes/components';
 import { CustomBreadcrumbs } from '@/components/custom-breadcrumbs';
 import { TorrentTable } from '@/components/torrents';
+import { AdUnit } from '@/components/ads';
 
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
@@ -276,6 +277,9 @@ export function PostDetailsHomeView({ post, latestPosts, videoParams }) {
                 </Stack>
               ))}
             </Stack>
+
+            {/* Sidebar Ad Unit (160x600 Skyscraper) */}
+            <AdUnit variant="skyscraper" sx={{ mt: 4 }} />
           </Grid>
         </Grid>
       </Container>

@@ -7,6 +7,7 @@ import { Iconify } from '@/components/iconify';
 import { Label } from '@/components/label';
 import { PostItem } from '@/sections/movies/post-item';
 import { TorrentTable } from '@/components/torrents';
+import { AdPair } from '@/components/ads';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { getMovieOrShow, getRecommendations } from '@/actions/api';
 
@@ -480,6 +481,9 @@ export default function TorrentDetailPage() {
               error={torrentsError}
             />
           </Box>
+
+          {/* Ad Placement */}
+          <AdPair sx={{ my: 3 }} />
 
           {/* Cast Section */}
           {cast.length > 0 && (
