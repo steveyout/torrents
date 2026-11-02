@@ -5,26 +5,26 @@ import { NextResponse } from 'next/server';
 const JACKETT_URL = process.env.NEXT_PUBLIC_JACKETT_API_URL || 'https://jackett.youplex.site';
 const JACKETT_KEY = process.env.NEXT_PUBLIC_JACKETT_API_KEY || 'quso5pnjk22smvl7f50l6q0mire0mr7q';
 
-// Category mapping from logical section to Torznab category numbers
+// Category mapping to primary Torznab category numbers (single IDs to avoid tracker query parsing errors)
 const CATEGORY_MAP = {
   all: '',
-  movies: '2000,2010,2020,2030,2040,2045,2050,2060',
-  tv: '5000,5010,5020,5030,5040,5045,5070,5080',
-  games: '1000,4000,4050',
-  music: '3000,3010,3020,3040',
-  audio: '3000,3030,3040',
-  books: '7000,7010,7020,7030,7040',
+  movies: '2000',
+  tv: '5000',
+  games: '4000',
+  music: '3000',
+  audio: '3000',
+  books: '7000',
 };
 
-// Verified working, healthy, fast indexers per category
+// Verified active, healthy, fast indexers per category
 const CATEGORY_INDEXERS = {
-  movies: ['thepiratebay', 'limetorrents', 'torrentgalaxyclone', 'yts'],
-  tv: ['thepiratebay', 'limetorrents', 'torrentgalaxyclone'],
-  games: ['limetorrents', 'thepiratebay', 'torrentscsv'],
-  music: ['thepiratebay', 'limetorrents', 'torrentscsv', 'internetarchive'],
-  audio: ['internetarchive', 'thepiratebay', 'limetorrents'],
-  books: ['internetarchive', 'thepiratebay', 'limetorrents'],
-  all: ['thepiratebay', 'limetorrents', 'torrentgalaxyclone'],
+  movies: ['yts', 'thepiratebay', 'nyaasi', 'torrentproject2'],
+  tv: ['thepiratebay', 'nyaasi', 'torrentproject2'],
+  games: ['thepiratebay', 'nyaasi', 'torrentproject2'],
+  music: ['thepiratebay', 'torrentproject2', 'internetarchive'],
+  audio: ['thepiratebay', 'internetarchive', 'torrentproject2'],
+  books: ['thepiratebay', 'internetarchive', 'torrentproject2'],
+  all: ['yts', 'thepiratebay', 'nyaasi', 'torrentproject2'],
 };
 
 // Simple in-memory response cache (5 min TTL)
@@ -97,125 +97,84 @@ export async function GET(request) {
 
   // Determine which indexers to query
   let targetIndexers = [];
-  let queryJackettAll = false;
 
-  if (requestedIndexers) {
-    if (requestedIndexers.toLowerCase() === 'all') {
-      queryJackettAll = true;
-      targetIndexers = candidateIndexers.slice(0, 3);
-    } else {
-      targetIndexers = requestedIndexers
-        .split(',')
-        .map((s) => s.trim())
-        .filter(Boolean);
-    }
+  if (requestedIndexers && requestedIndexers.toLowerCase() !== 'all') {
+    targetIndexers = requestedIndexers
+      .split(',')
+      .map((s) => s.trim().toLowerCase())
+      .filter((idx) => candidateIndexers.includes(idx) || ['yts', 'thepiratebay', 'nyaasi', 'torrentproject2', 'internetarchive'].includes(idx));
   }
 
   if (targetIndexers.length === 0) {
-    targetIndexers = candidateIndexers.slice(0, 3);
+    targetIndexers = candidateIndexers.slice(0, 4);
   }
 
   try {
-    let allItems = [];
+    const allItems = [];
     const queriedIndexers = [];
 
-    // If "all" indexers requested, first try Jackett's aggregate endpoint
-    if (queryJackettAll) {
-      try {
-        const allUrl = new URL(`${JACKETT_URL}/torznab/all/api`);
-        allUrl.searchParams.set('apikey', JACKETT_KEY);
-        allUrl.searchParams.set('t', 'search');
-        if (finalSearchQuery) allUrl.searchParams.set('q', finalSearchQuery);
-        if (catCode) allUrl.searchParams.set('cat', catCode);
+    // Helper to fetch from a single indexer safely
+    const fetchIndexer = async (indexerId, queryStr, useCat = true) => {
+      const url = new URL(`${JACKETT_URL}/torznab/${indexerId}/api`);
+      url.searchParams.set('apikey', JACKETT_KEY);
+      url.searchParams.set('t', 'search');
+      if (queryStr) url.searchParams.set('q', queryStr);
 
-        const allRes = await fetch(allUrl.toString(), {
-          signal: AbortSignal.timeout(7000),
+      // Only pass category if the tracker supports it cleanly (skip for YTS which is movies only and TPB with text search)
+      if (useCat && catCode && indexerId !== 'yts' && indexerId !== 'thepiratebay') {
+        url.searchParams.set('cat', catCode);
+      }
+
+      try {
+        const res = await fetch(url.toString(), {
+          signal: AbortSignal.timeout(5000),
           headers: {
             Accept: 'application/rss+xml, application/xml, text/xml',
-            'User-Agent': 'Youplex-Torrents/1.0',
+            'User-Agent': 'Youplex-Torrents/2.0',
           },
         });
 
-        if (allRes.ok) {
-          const xmlText = await allRes.text();
-          const items = parseTorznabXml(xmlText, 'all');
-          if (items.length > 0) {
-            allItems.push(...items);
-            queriedIndexers.push('all');
-          }
+        if (!res.ok) {
+          return { indexer: indexerId, items: [] };
         }
-      } catch {
-        // Jackett /torznab/all/api timed out or failed; will fallback to parallel candidate indexers below
+
+        const xmlText = await res.text();
+        const items = parseTorznabXml(xmlText, indexerId);
+        return { indexer: indexerId, items };
+      } catch (err) {
+        return { indexer: indexerId, items: [], error: err.message };
       }
-    }
+    };
 
-    // If aggregate didn't return items (or wasn't requested), query target indexers in parallel
-    if (allItems.length === 0) {
-      const fetchPromises = targetIndexers.map(async (indexerId) => {
-        const url = new URL(`${JACKETT_URL}/torznab/${indexerId}/api`);
-        url.searchParams.set('apikey', JACKETT_KEY);
-        url.searchParams.set('t', 'search');
-        if (finalSearchQuery) url.searchParams.set('q', finalSearchQuery);
-        if (catCode) url.searchParams.set('cat', catCode);
+    // Query target indexers in parallel
+    const fetchPromises = targetIndexers.map((indexerId) => fetchIndexer(indexerId, finalSearchQuery, true));
+    const results = await Promise.allSettled(fetchPromises);
 
-        try {
-          const res = await fetch(url.toString(), {
-            signal: AbortSignal.timeout(5000),
-            headers: {
-              Accept: 'application/rss+xml, application/xml, text/xml',
-              'User-Agent': 'Youplex-Torrents/1.0',
-            },
-          });
-
-          if (!res.ok) {
-            return { indexer: indexerId, items: [] };
-          }
-
-          const xmlText = await res.text();
-          const items = parseTorznabXml(xmlText, indexerId);
-          return { indexer: indexerId, items };
-        } catch (err) {
-          return { indexer: indexerId, items: [], error: err.message };
-        }
-      });
-
-      const results = await Promise.allSettled(fetchPromises);
-
-      for (const r of results) {
-        if (r.status === 'fulfilled' && r.value) {
-          queriedIndexers.push(r.value.indexer);
+    for (const r of results) {
+      if (r.status === 'fulfilled' && r.value) {
+        queriedIndexers.push(r.value.indexer);
+        if (r.value.items && r.value.items.length > 0) {
           allItems.push(...r.value.items);
         }
       }
     }
 
-    // Fallback if initial query returned 0 items and search has year or season
-    if (allItems.length === 0 && (year || season) && q.trim()) {
-      const fallbackPromises = targetIndexers.slice(0, 2).map(async (indexerId) => {
-        const url = new URL(`${JACKETT_URL}/torznab/${indexerId}/api`);
-        url.searchParams.set('apikey', JACKETT_KEY);
-        url.searchParams.set('t', 'search');
-        url.searchParams.set('q', q.trim());
-        if (catCode) url.searchParams.set('cat', catCode);
+    // Fallback if initial query returned 0 items: try sanitized queries (without colons, dashes, or year)
+    if (allItems.length === 0 && finalSearchQuery) {
+      const cleanWithYear = finalSearchQuery.replace(/[:\-–—_.]/g, ' ').replace(/\s+/g, ' ').trim();
+      const rawTitleNoYear = q.replace(/[:\-–—_.]/g, ' ').replace(/\s+/g, ' ').trim();
+      const fallbackCandidates = [cleanWithYear, rawTitleNoYear, q.trim()].filter(
+        (val, idx, arr) => val && arr.indexOf(val) === idx && val !== finalSearchQuery
+      );
 
-        try {
-          const res = await fetch(url.toString(), {
-            signal: AbortSignal.timeout(4500),
-          });
-          if (res.ok) {
-            const xml = await res.text();
-            return parseTorznabXml(xml, indexerId);
+      for (const fallbackQ of fallbackCandidates) {
+        if (allItems.length > 0) break;
+        const fallbackPromises = targetIndexers.slice(0, 3).map((indexerId) => fetchIndexer(indexerId, fallbackQ, false));
+        const fallbackRes = await Promise.allSettled(fallbackPromises);
+        for (const fb of fallbackRes) {
+          if (fb.status === 'fulfilled' && fb.value && fb.value.items?.length > 0) {
+            allItems.push(...fb.value.items);
           }
-        } catch {
-          // ignore fallback error
-        }
-        return [];
-      });
-
-      const fallbackRes = await Promise.allSettled(fallbackPromises);
-      for (const fb of fallbackRes) {
-        if (fb.status === 'fulfilled' && fb.value) {
-          allItems.push(...fb.value);
         }
       }
     }

@@ -9,7 +9,7 @@ import { PostItem } from '@/sections/movies/post-item';
 import { TorrentTable } from '@/components/torrents';
 import { AdPair } from '@/components/ads';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { getMovieOrShow, getRecommendations } from '@/actions/api';
+import { getMovieOrShow, getRecommendations, searchMedia } from '@/actions/api';
 
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
@@ -51,47 +51,60 @@ export default function TorrentDetailPage() {
   const [torrentsError, setTorrentsError] = useState(null);
   const [customQuery, setCustomQuery] = useState('');
 
-  // Fetch TMDB Metadata
+  // Fetch TMDB Metadata with fallback to search if id query param is omitted
   useEffect(() => {
     let active = true;
-
-    if (!id) {
-      setIsLoading(false);
-      return undefined;
-    }
 
     setIsLoading(true);
     setError(null);
 
-    getMovieOrShow(type, id)
-      .then((data) => {
-        if (active) {
-          setMovieOrShow(data);
-          const firstSeason = data?.seasons?.find((s) => s.season_number > 0);
-          if (firstSeason && !initialSeason) {
-            setSelectedSeason(firstSeason.season_number);
+    const loadMediaDetails = async () => {
+      try {
+        let mediaId = id;
+
+        // If ID is not present in URL parameters, search TMDB by title slug
+        if (!mediaId && titleSlug) {
+          const cleanQuery = decodeURIComponent(titleSlug).replace(/-/g, ' ');
+          const searchRes = await searchMedia(cleanQuery);
+          if (searchRes?.results && searchRes.results.length > 0) {
+            mediaId = searchRes.results[0].id;
           }
         }
-      })
-      .catch((err) => {
-        if (active) setError(err?.message || 'Something went wrong while loading this title.');
-      })
-      .finally(() => {
-        if (active) setIsLoading(false);
-      });
 
-    getRecommendations(type, id)
-      .then((data) => {
-        if (active) setRecommendations(data?.results || []);
-      })
-      .catch(() => {
-        if (active) setRecommendations([]);
-      });
+        if (!mediaId) {
+          if (active) {
+            setIsLoading(false);
+            setError('Could not identify title details. Please search for the title.');
+          }
+          return;
+        }
+
+        const data = await getMovieOrShow(type, mediaId);
+        if (!active) return;
+
+        setMovieOrShow(data);
+        const firstSeason = data?.seasons?.find((s) => s.season_number > 0);
+        if (firstSeason && !initialSeason) {
+          setSelectedSeason(firstSeason.season_number);
+        }
+
+        const recData = await getRecommendations(type, mediaId).catch(() => ({ results: [] }));
+        if (active) {
+          setRecommendations(recData?.results || []);
+        }
+      } catch (err) {
+        if (active) setError(err?.message || 'Something went wrong while loading this title.');
+      } finally {
+        if (active) setIsLoading(false);
+      }
+    };
+
+    loadMediaDetails();
 
     return () => {
       active = false;
     };
-  }, [type, id, initialSeason]);
+  }, [type, id, titleSlug, initialSeason]);
 
   // Fetch Torrents from Jackett API
   const fetchJackettTorrents = useCallback(
@@ -167,7 +180,8 @@ export default function TorrentDetailPage() {
   // Stream URL to youplex.site
   const streamType = isTv ? 'tv' : 'movie';
   const slug = titleSlug || (displayTitle ? paramCase(displayTitle) : 'watch');
-  const streamBaseUrl = `https://youplex.site/watch/${streamType}/${slug}/play?id=${id}`;
+  const mediaIdForStream = id || movieOrShow.id || '';
+  const streamBaseUrl = `https://youplex.site/watch/${streamType}/${slug}/play?id=${mediaIdForStream}`;
   const streamUrl = isTv
     ? `${streamBaseUrl}&season=${selectedSeason}&episode=${selectedEpisode}`
     : streamBaseUrl;
@@ -591,17 +605,30 @@ function DetailSkeleton() {
   );
 }
 
-function DetailError({ error }) {
+function DetailError({ error, title }) {
+  const router = useRouter();
+  const searchTitle = title ? decodeURIComponent(title).replace(/-/g, ' ') : '';
+
   return (
     <Container sx={{ py: 12, textAlign: 'center' }}>
-      <Stack alignItems="center" spacing={2} sx={{ maxWidth: 400, mx: 'auto' }}>
-        <Iconify icon="solar:shield-warning-bold" width={56} sx={{ color: 'error.main' }} />
-        <Typography variant="h5">Could not load title</Typography>
+      <Stack alignItems="center" spacing={2} sx={{ maxWidth: 460, mx: 'auto' }}>
+        <Iconify icon="solar:shield-warning-bold" width={56} sx={{ color: 'warning.main' }} />
+        <Typography variant="h5">Title Details Loading</Typography>
         <Typography variant="body2" color="text.secondary">
-          {error || 'The requested title could not be loaded.'}
+          {error || 'Unable to automatically find TMDB information for this title.'}
         </Typography>
-        <Button variant="contained" onClick={() => window.location.reload()}>
-          Try Again
+        {searchTitle && (
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={<Iconify icon="solar:magnifer-bold" />}
+            onClick={() => router.push(`/search?q=${encodeURIComponent(searchTitle)}`)}
+          >
+            Search Torrents for &quot;{searchTitle}&quot;
+          </Button>
+        )}
+        <Button variant="outlined" color="inherit" onClick={() => router.push('/movies')}>
+          Browse Movies
         </Button>
       </Stack>
     </Container>
