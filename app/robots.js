@@ -3,7 +3,8 @@ import { CONFIG } from '@/config-global';
 // ----------------------------------------------------------------------
 
 export default function robots() {
-  const baseUrl = CONFIG.site.serverUrl || 'https://youplex.cc';
+  const rawBase = CONFIG.site.serverUrl || process.env.NEXT_PUBLIC_SITE_URL || 'https://youplex.cc';
+  const baseUrl = (rawBase.includes('youplex.site') ? 'https://youplex.cc' : rawBase).replace(/\/+$/, '');
 
   return {
     rules: [

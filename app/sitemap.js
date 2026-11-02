@@ -4,7 +4,8 @@ import { getMovies, getTvShows } from '@/actions/api';
 // ----------------------------------------------------------------------
 
 export default async function sitemap() {
-  const baseUrl = CONFIG.site.serverUrl || 'https://youplex.cc';
+  const rawBase = CONFIG.site.serverUrl || process.env.NEXT_PUBLIC_SITE_URL || 'https://youplex.cc';
+  const baseUrl = (rawBase.includes('youplex.site') ? 'https://youplex.cc' : rawBase).replace(/\/+$/, '');
 
   // 1. Core High-Priority Category Landing Pages
   const staticRoutes = [
