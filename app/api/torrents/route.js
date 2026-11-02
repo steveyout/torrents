@@ -2,8 +2,16 @@ import { NextResponse } from 'next/server';
 
 // ----------------------------------------------------------------------
 
-const JACKETT_URL = process.env.NEXT_PUBLIC_JACKETT_API_URL || 'https://jackett.youplex.site';
-const JACKETT_KEY = process.env.NEXT_PUBLIC_JACKETT_API_KEY || 'quso5pnjk22smvl7f50l6q0mire0mr7q';
+const JACKETT_URL =
+  process.env.JACKETT_INTERNAL_URL ||
+  process.env.JACKETT_API_URL ||
+  process.env.NEXT_PUBLIC_JACKETT_API_URL ||
+  'https://jackett.youplex.site';
+
+const JACKETT_KEY =
+  process.env.JACKETT_API_KEY ||
+  process.env.NEXT_PUBLIC_JACKETT_API_KEY ||
+  'quso5pnjk22smvl7f50l6q0mire0mr7q';
 
 // Category mapping to primary Torznab category numbers (single IDs to avoid tracker query parsing errors)
 const CATEGORY_MAP = {
@@ -59,6 +67,7 @@ export async function GET(request) {
   const season = searchParams.get('season') || '';
   const episode = searchParams.get('episode') || '';
   const limit = parseInt(searchParams.get('limit') || '40', 10);
+  const isDebug = searchParams.get('debug') === 'true';
 
   // Environment and request indexer configuration
   const envIndexer = process.env.JACKETT_INDEXER || process.env.NEXT_PUBLIC_JACKETT_INDEXER || '';
@@ -87,9 +96,11 @@ export async function GET(request) {
   }
 
   const cacheKey = `${category}_${finalSearchQuery}_${limit}_${requestedIndexers}`;
-  const cachedData = getCached(cacheKey);
-  if (cachedData) {
-    return NextResponse.json(cachedData);
+  if (!isDebug) {
+    const cachedData = getCached(cacheKey);
+    if (cachedData && cachedData.torrents && cachedData.torrents.length > 0) {
+      return NextResponse.json(cachedData);
+    }
   }
 
   const catCode = CATEGORY_MAP[category] || '';
@@ -113,49 +124,74 @@ export async function GET(request) {
     const allItems = [];
     const queriedIndexers = [];
 
-    // Helper to fetch from a single indexer safely
+    // Helper to fetch from a single indexer safely with VPS localhost fallback
     const fetchIndexer = async (indexerId, queryStr, useCat = true) => {
-      const url = new URL(`${JACKETT_URL}/torznab/${indexerId}/api`);
-      url.searchParams.set('apikey', JACKETT_KEY);
-      url.searchParams.set('t', 'search');
-      if (queryStr) url.searchParams.set('q', queryStr);
+      const candidateBaseUrls = [
+        JACKETT_URL,
+        ...(JACKETT_URL.includes('127.0.0.1') || JACKETT_URL.includes('localhost')
+          ? []
+          : ['http://127.0.0.1:9117', 'http://localhost:9117']),
+      ];
 
-      // Only pass category if the tracker supports it cleanly (skip for YTS which is movies only and TPB with text search)
-      if (useCat && catCode && indexerId !== 'yts' && indexerId !== 'thepiratebay') {
-        url.searchParams.set('cat', catCode);
-      }
+      let lastError = null;
+      let lastStatus = null;
 
-      try {
-        const res = await fetch(url.toString(), {
-          signal: AbortSignal.timeout(5000),
-          headers: {
-            Accept: 'application/rss+xml, application/xml, text/xml',
-            'User-Agent': 'Youplex-Torrents/2.0',
-          },
-        });
+      for (const baseUrl of candidateBaseUrls) {
+        try {
+          const url = new URL(`${baseUrl}/torznab/${indexerId}/api`);
+          url.searchParams.set('apikey', JACKETT_KEY);
+          url.searchParams.set('t', 'search');
+          if (queryStr) url.searchParams.set('q', queryStr);
 
-        if (!res.ok) {
-          return { indexer: indexerId, items: [] };
+          // Only pass category if the tracker supports it cleanly (skip for YTS and TPB with text search)
+          if (useCat && catCode && indexerId !== 'yts' && indexerId !== 'thepiratebay') {
+            url.searchParams.set('cat', catCode);
+          }
+
+          const res = await fetch(url.toString(), {
+            signal: AbortSignal.timeout(5000),
+            headers: {
+              Accept: 'application/rss+xml, application/xml, text/xml',
+              'User-Agent': 'Youplex-Torrents/2.0',
+            },
+          });
+
+          lastStatus = res.status;
+          if (!res.ok) {
+            lastError = `HTTP ${res.status} from ${baseUrl}`;
+            continue;
+          }
+
+          const xmlText = await res.text();
+          const items = parseTorznabXml(xmlText, indexerId);
+          return { indexer: indexerId, count: items.length, items, usedUrl: baseUrl };
+        } catch (err) {
+          lastError = `${err.message} from ${baseUrl}`;
         }
-
-        const xmlText = await res.text();
-        const items = parseTorznabXml(xmlText, indexerId);
-        return { indexer: indexerId, items };
-      } catch (err) {
-        return { indexer: indexerId, items: [], error: err.message };
       }
+
+      return { indexer: indexerId, items: [], error: lastError, status: lastStatus };
     };
 
     // Query target indexers in parallel
     const fetchPromises = targetIndexers.map((indexerId) => fetchIndexer(indexerId, finalSearchQuery, true));
     const results = await Promise.allSettled(fetchPromises);
+    const debugDetails = [];
 
     for (const r of results) {
       if (r.status === 'fulfilled' && r.value) {
         queriedIndexers.push(r.value.indexer);
+        debugDetails.push({
+          indexer: r.value.indexer,
+          count: r.value.items?.length || 0,
+          usedUrl: r.value.usedUrl,
+          error: r.value.error,
+        });
         if (r.value.items && r.value.items.length > 0) {
           allItems.push(...r.value.items);
         }
+      } else {
+        debugDetails.push({ error: r.reason?.message });
       }
     }
 
@@ -203,7 +239,17 @@ export async function GET(request) {
       torrents: uniqueItems.slice(0, limit),
     };
 
-    setCached(cacheKey, finalResults);
+    if (isDebug || uniqueItems.length === 0) {
+      finalResults._debug = {
+        jackettConfiguredUrl: JACKETT_URL,
+        attempts: debugDetails,
+      };
+    }
+
+    if (uniqueItems.length > 0) {
+      setCached(cacheKey, finalResults);
+    }
+
     return NextResponse.json(finalResults);
   } catch (err) {
     console.error('[API Torrents Error]:', err);
